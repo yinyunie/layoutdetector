@@ -105,7 +105,7 @@ def getCameraParas(lines, clusters):
 
     return K
 
-def calibrate(image, ifplot):
+def calibrate(image, mode = 0, ifplot = 1):
     # Line segment detection
     thLength = 30.0 # threshold of the length of line segments
 
@@ -115,7 +115,7 @@ def calibrate(image, ifplot):
     # Camera internal parameters
     pp = image.shape[1]/2., image.shape[0]/2. # principle point (in pixel)
 
-    f = np.max(image.shape)# focal length (in pixel), a former guess
+    f = np.double(np.max(image.shape))# focal length (in pixel), a former guess
 
     noiseRatio = 0.5
     # VPDetection class
@@ -123,23 +123,26 @@ def calibrate(image, ifplot):
     vps, clusters = detector.run()
 
     # decide camera intrinsic parameters
-    K = getCameraParas(lines, clusters)
+    if mode == 0:
+        K = [[f, 0., pp[0]], [0., f, pp[1]], [0., 0., 1.]]
+    elif mode == 1:
+        K = getCameraParas(lines, clusters)
+        # Its ok to replace with the new camera intrinsic parameters to estimate the camera extrinsic matrix,
+        # but the difference is minor.
+        detector = VPDetection(lines, [K[0, 2], K[1, 2]], K[0, 0], noiseRatio)
+        vps, clusters = detector.run()
 
-    # Its ok to replace with the new camera intrinsic parameters to estimate the camera extrinsic matrix,
-    # but the difference is minor.
-    detector = VPDetection(lines, [K[0,2], K[1,2]], K[0,0], noiseRatio)
-    vps_n, clusters_n = detector.run()
 
     if ifplot:
         image1 = np.copy(image)
-        drawClusters(image1, lines, clusters_n)
+        drawClusters(image1, lines, clusters)
         cv2.imshow("", image1)
         cv2.waitKey(0)
 
         image2 = np.copy(image)
-        drawBox(image2, vps_n, K[0, 0], [K[0, 2], K[1, 2]])
+        drawBox(image2, vps, K[0][0], [K[0][2], K[1][2]])
         cv2.imshow("", image2)
         cv2.waitKey(0)
 
-    return K, vps_n
+    return K, vps
 
