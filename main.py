@@ -13,5 +13,5 @@ if __name__ == '__main__':
     except IOError:
         print 'Cannot open the image file, please verify the image address.'
 
-    mode = 0
+    mode = 1
     K, R = camera.calibrate(image, mode, 1)

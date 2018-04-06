@@ -75,9 +75,10 @@ def getCameraParas(lines, clusters):
             lineMatrix.append( np.cross(pt1, pt2) )
 
         lineMatrix = np.array(lineMatrix)
+
+        # MLS estimation
         A = lineMatrix[:, :2]
         y = -lineMatrix[:, 2]
-        # MLS estimation
         pt = np.linalg.inv(A.T.dot(A)).dot(A.T).dot(y)
         # # eigen value solution
         # eigenValues, eigenVecs = np.linalg.eig(lineMatrix.T.dot(lineMatrix))
