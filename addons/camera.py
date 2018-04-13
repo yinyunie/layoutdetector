@@ -145,5 +145,5 @@ def calibrate(image, mode = 0, ifplot = 1):
         cv2.imshow("", image2)
         cv2.waitKey(0)
 
-    return K, vps
+    return K, vps, clusters, lines
 
