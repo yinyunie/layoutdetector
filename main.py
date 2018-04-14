@@ -48,6 +48,13 @@ if __name__ == '__main__':
     cv2.imshow('', image1)
     cv2.waitKey(0)
 
+    # next to generate line candidates
+    # 1. define the role of each line (between front wall and floor, e.t.c.)
+    # 2. using vanishing point to extend lines to ensure each corner point
+    # 3. use each corner to generate occluded lines or undetected lines.
+    # 4. use vanishing point to generate random lines within mask area.
+    # 5. generate proposals
+
 
     print 'Debug'
 
