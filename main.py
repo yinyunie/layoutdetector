@@ -42,6 +42,12 @@ if __name__ == '__main__':
     # use mask_map to filter out wrong line members
     new_clusters = line_filter(lines, clusters, mask_map)
 
+    # draw filtered lines
+    image1 = np.copy(image)
+    camera.drawClusters(image1, lines, new_clusters)
+    cv2.imshow('', image1)
+    cv2.waitKey(0)
+
 
     print 'Debug'
 

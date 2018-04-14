@@ -1,14 +1,11 @@
 import numpy as np
 
 def pnts_gen(pt1, pt2, num_checks):
-
     pts = []
     for i in range(num_checks):
         pt = (i * (1./(num_checks-1))) * (pt2 - pt1) + pt1
         pts.append(pt)
-
     return pts
-
 
 def line_filter(lines, clusters, mask):
     num_checks = 4
