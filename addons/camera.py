@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from vpdetector import VPDetection
 from pylsd.lsd import lsd
+import random
 
 def LineDetect(image, thLength):
     if image.shape[2] == 1:
@@ -28,14 +29,26 @@ def LineDetect(image, thLength):
 
     return lineSegs
 
-def drawClusters(image, lines, clusters):
-    palattee = [(255,0,0), (0,255,0), (0,0,255)]
+def drawClusters(image, lines, clusters, colorPattern, linelabels = None):
+
+    if colorPattern == 'vps':
+        palette = [(255,0,0), (0,255,0), (0,0,255)]
+    elif colorPattern == 'gc':
+        palette = np.random.randint(0, 256, size=[9,3])
+        labellist = [23, 24, 25, 26, 34, 35, 36, 45, 46]
+
     colorID = 0
-    for cluster in clusters:
-        for line_id in cluster:
+    for cluster_id in range(len(clusters)):
+        for line_id in clusters[cluster_id]:
             pt1 = (np.int(lines[line_id][0]), np.int(lines[line_id][1]))
             pt2 = (np.int(lines[line_id][2]), np.int(lines[line_id][3]))
-            cv2.line(image, pt1, pt2, palattee[colorID], 2)
+            if colorPattern == 'vps':
+                cv2.line(image, pt1, pt2, palette[colorID], 2)
+            elif colorPattern == 'gc':
+                label = linelabels[linelabels[:,0]==line_id, 1]
+                cid = labellist.index(label)
+                cv2.line(image, pt1, pt2, palette[cid,:], 5)
+
         colorID += 1
 
     return image
@@ -136,7 +149,7 @@ def calibrate(image, mode = 0, ifplot = 1):
 
     if ifplot:
         image1 = np.copy(image)
-        drawClusters(image1, lines, clusters)
+        drawClusters(image1, lines, clusters, 'vps')
         cv2.imshow("", image1)
         cv2.waitKey(0)
 

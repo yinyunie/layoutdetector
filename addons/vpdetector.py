@@ -251,7 +251,7 @@ class VPDetection:
 
         return vpHypo[bestIdx]
 
-    def lines2Vps(self, thAngle, vps ):
+    def lines2Vps(self, thAngle, vps):
         clusters = [[] for i in xrange(3)]
 
         vp2D = [[] for i in xrange(3)]

@@ -4,7 +4,7 @@ if __name__ == '__main__':
     from addons import camera
     import scipy.io as sio
     import numpy as np
-    from addons.lib import line_filter
+    from addons.lib import line_filter, decide_linelabel
 
     parser = argparse.ArgumentParser(description="Layout prediction, vanishing point detection and camera orientation decision from "
                                                  "a single image.")
@@ -12,6 +12,8 @@ if __name__ == '__main__':
                         help="Give the address of image source")
     parser.add_argument("-l", "--layout", dest="layout", type=str, metavar="LAYOUT",
                         help="Give the address of coarse layout of the image.")
+    parser.add_argument("-g", "--gc", dest="gc", type=str, metavar="GEOCONTENT",
+                        help="Give the address of geometric content of the image.")
     args = parser.parse_args()
 
     # Read source image
@@ -44,7 +46,7 @@ if __name__ == '__main__':
 
     # draw filtered lines
     image1 = np.copy(image)
-    camera.drawClusters(image1, lines, new_clusters)
+    camera.drawClusters(image1, lines, new_clusters, 'vps')
     cv2.imshow('', image1)
     cv2.waitKey(0)
 
@@ -55,6 +57,20 @@ if __name__ == '__main__':
     # 4. use vanishing point to generate random lines within mask area.
     # 5. generate proposals
 
+    # read geometric content of the image
+    try:
+        gc_map = sio.loadmat(args.gc)['GC_map']
+    except IOError:
+        print 'Cannot open the gc file, please verify the address.'
+
+    # 1. define the role of each line (between front wall and floor, e.t.c.)
+    # Definition: eight classes of lines are defined, but only four are used
+    line_labels = decide_linelabel(lines, new_clusters, gc_map)
+
+    image1 = np.copy(image)
+    camera.drawClusters(image1, lines, new_clusters, 'gc', line_labels)
+    cv2.imshow('', image1)
+    cv2.waitKey(0)
 
     print 'Debug'
 

@@ -1,4 +1,57 @@
 import numpy as np
+from pyflann import *
+
+def decide_linelabel(lines, clusters, gc_map):
+    '''GC map definition:
+    # 1. background.
+    # 2. frontal wall
+    # 3. left wall
+    # 4. right wall
+    # 5. floor
+    # 6. ceiling'''
+    '''Output definition:
+    linelabels: (9 in total)
+    '23': between frontal wall (2) and left wall (3)
+    '24': between frontal wall (2) and right wall (4)
+    '25': between frontal wall (2) and floor (5)
+    '26': between frontal wall (2) and ceiling (6)
+    '34': between left wall (2) and right wall (6)
+    '35': between left wall (2) and floor (5)
+    '36': between left wall (2) and ceiling (6)
+    '45': between right wall (2) and floor (5)
+    '46': between right wall (2) and ceiling (6)'''
+    # build dataset for each gc label
+    gc_labels = np.unique(gc_map)
+    dataset = []
+    for label in gc_labels:
+        dataset.append(np.double(np.argwhere(gc_map == label)))
+
+    flann = FLANN()
+    linelabels = []
+
+    for cluster_id in range(len(clusters)):
+        for line_id in clusters[cluster_id]:
+            # pay attention to the coordinate system change
+            pt1 = np.array([lines[line_id][1], lines[line_id][0]])
+            pt2 = np.array([lines[line_id][3], lines[line_id][2]])
+            testset = np.array([pt1, pt2])
+
+            dist_list = []
+            for data in dataset:
+                __, dists = flann.nn(data, testset, 1)
+                dist_list.append(np.max(dists))
+
+            linelabel1 = gc_labels[np.argsort(dist_list)[0]]
+            linelabel2 = gc_labels[np.argsort(dist_list)[1]]
+
+            if linelabel1 > linelabel2:
+                linelabel1, linelabel2 = linelabel2, linelabel1
+            linelabel = linelabel1*10 + linelabel2
+
+            linelabels.append([line_id, linelabel])
+
+    linelabels = np.array(linelabels)
+    return linelabels
 
 def pnts_gen(pt1, pt2, num_checks):
     pts = []
