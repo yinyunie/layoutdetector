@@ -34,8 +34,8 @@ def drawClusters(image, lines, clusters, colorPattern, linelabels = None):
     if colorPattern == 'vps':
         palette = [(255,0,0), (0,255,0), (0,0,255)]
     elif colorPattern == 'gc':
-        palette = np.random.randint(0, 256, size=[9,3])
-        labellist = [23, 24, 25, 26, 34, 35, 36, 45, 46]
+        palette = np.random.randint(0, 256, size=[8,3])
+        labellist = [23, 24, 25, 26, 35, 36, 45, 46]
 
     colorID = 0
     for cluster_id in range(len(clusters)):

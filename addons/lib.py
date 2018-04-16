@@ -1,6 +1,21 @@
 import numpy as np
 from pyflann import *
 
+def processGC(gc_map):
+
+    # restric gc_map to limited cases
+    gc_map_new = np.copy(gc_map)
+    gc_labels = np.unique(gc_map)
+    if 2 not in gc_labels:
+        if 4 in gc_labels:
+            gc_map_new[gc_map==4] = 2
+            return gc_map_new
+        elif 3 in gc_labels:
+            gc_map_new[gc_map == 3] = 2
+            return  gc_map_new
+        else:
+            return None
+
 def decide_linelabel(lines, clusters, gc_map):
     '''GC map definition:
     # 1. background.
@@ -15,7 +30,6 @@ def decide_linelabel(lines, clusters, gc_map):
     '24': between frontal wall (2) and right wall (4)
     '25': between frontal wall (2) and floor (5)
     '26': between frontal wall (2) and ceiling (6)
-    '34': between left wall (2) and right wall (6)
     '35': between left wall (2) and floor (5)
     '36': between left wall (2) and ceiling (6)
     '45': between right wall (2) and floor (5)
@@ -29,26 +43,27 @@ def decide_linelabel(lines, clusters, gc_map):
     flann = FLANN()
     linelabels = []
 
-    for cluster_id in range(len(clusters)):
-        for line_id in clusters[cluster_id]:
-            # pay attention to the coordinate system change
-            pt1 = np.array([lines[line_id][1], lines[line_id][0]])
-            pt2 = np.array([lines[line_id][3], lines[line_id][2]])
-            testset = np.array([pt1, pt2])
+    line_list = [line_id for cluster in clusters for line_id in cluster]
 
-            dist_list = []
-            for data in dataset:
-                __, dists = flann.nn(data, testset, 1)
-                dist_list.append(np.max(dists))
+    for line_id in line_list:
+        # pay attention to the coordinate system change
+        pt1 = np.array([lines[line_id][1], lines[line_id][0]])
+        pt2 = np.array([lines[line_id][3], lines[line_id][2]])
+        testset = np.array([pt1, pt2])
 
-            linelabel1 = gc_labels[np.argsort(dist_list)[0]]
-            linelabel2 = gc_labels[np.argsort(dist_list)[1]]
+        dist_list = []
+        for data in dataset:
+            __, dists = flann.nn(data, testset, 1)
+            dist_list.append(np.max(dists))
 
-            if linelabel1 > linelabel2:
-                linelabel1, linelabel2 = linelabel2, linelabel1
-            linelabel = linelabel1*10 + linelabel2
+        linelabel1 = gc_labels[np.argsort(dist_list)[0]]
+        linelabel2 = gc_labels[np.argsort(dist_list)[1]]
 
-            linelabels.append([line_id, linelabel])
+        if linelabel1 > linelabel2:
+            linelabel1, linelabel2 = linelabel2, linelabel1
+        linelabel = linelabel1 * 10 + linelabel2
+
+        linelabels.append([line_id, linelabel])
 
     linelabels = np.array(linelabels)
     return linelabels

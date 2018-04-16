@@ -4,7 +4,7 @@ if __name__ == '__main__':
     from addons import camera
     import scipy.io as sio
     import numpy as np
-    from addons.lib import line_filter, decide_linelabel
+    from addons.lib import line_filter, decide_linelabel, processGC
 
     parser = argparse.ArgumentParser(description="Layout prediction, vanishing point detection and camera orientation decision from "
                                                  "a single image.")
@@ -60,6 +60,7 @@ if __name__ == '__main__':
     # read geometric content of the image
     try:
         gc_map = sio.loadmat(args.gc)['GC_map']
+        gc_map = processGC(gc_map)
     except IOError:
         print 'Cannot open the gc file, please verify the address.'
 
