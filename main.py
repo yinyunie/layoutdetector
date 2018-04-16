@@ -1,10 +1,11 @@
 if __name__ == '__main__':
     import argparse
     import cv2
+    import sys
     from addons import camera
     import scipy.io as sio
     import numpy as np
-    from addons.lib import line_filter, decide_linelabel, processGC
+    from addons.lib import line_filter, decide_linelabel, processGC, gen_lineproposals
 
     parser = argparse.ArgumentParser(description="Layout prediction, vanishing point detection and camera orientation decision from "
                                                  "a single image.")
@@ -70,6 +71,13 @@ if __name__ == '__main__':
 
     image1 = np.copy(image)
     camera.drawClusters(image1, lines, new_clusters, 'gc', line_labels)
+    cv2.imshow('', image1)
+    cv2.waitKey(0)
+
+    # generate line proposals
+    lines_gc, line_gc_labels, line_gc_clusters = gen_lineproposals(lines, vps, K, mask_map, gc_map, new_clusters, line_labels)
+    image1 = np.copy(image)
+    camera.drawClusters(image1,lines_gc, line_gc_clusters, 'gc', line_gc_labels)
     cv2.imshow('', image1)
     cv2.waitKey(0)
 
