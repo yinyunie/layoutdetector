@@ -80,7 +80,7 @@ def gen_line_clusters(vps, K, lines):
 
     return line_clusters
 
-def gen_lineproposals(lines, vps, K, mask_map, gc_map, clusters, line_labels):
+def gen_lines_fromGC(gc_map, vps, K):
 
     # decide which kinds of lines we should generate
     gc_labels = np.unique(gc_map)
@@ -158,6 +158,16 @@ def gen_lineproposals(lines, vps, K, mask_map, gc_map, clusters, line_labels):
     line_gc_clusters = gen_line_clusters(vps, K, lines_gc)
 
     line_gc_labels = np.array(line_gc_labels)
+
+    return lines_gc, line_gc_labels, line_gc_clusters
+
+def gen_lineproposals(lines, vps, K, mask_map, gc_map, clusters, line_labels):
+
+    # generate lines from gc content
+    lines_gc, line_gc_labels, line_gc_clusters = gen_lines_fromGC(gc_map, vps, K)
+
+    # generate lines from inference
+    
 
     return lines_gc, line_gc_labels, line_gc_clusters
 
