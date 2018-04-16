@@ -16,7 +16,7 @@ def gen_line_fromGC(gc_map, gc_label1, gc_label2):
     y = np.hstack([y0, y1])
 
     prob = problem(y, X)
-    param = parameter('-s 3 -c 10 -B 1')
+    param = parameter('-s 2 -c 1 -B 1')
     model = train(prob, param)
     w, b = model.get_decfun()
 
