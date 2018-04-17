@@ -199,6 +199,10 @@ def comb_to_set(lines_new, line_new_labels, line_new_clusters, lines, line_label
 
     return lines_set, line_labels_set, clusters_set
 
+def infer_lines(lines_set, line_labels_set, clusters_set):
+    print "debug"
+
+
 
 def gen_lineproposals(lines, vps, K, mask_map, gc_map, clusters, line_labels):
 
