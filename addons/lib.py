@@ -161,15 +161,58 @@ def gen_lines_fromGC(gc_map, vps, K):
 
     return lines_gc, line_gc_labels, line_gc_clusters
 
+def comb_to_set(lines_new, line_new_labels, line_new_clusters, lines, line_labels, clusters):
+
+    # combines all line information to the a whole set
+
+    # initialisation
+    lines_set = []
+    line_labels_set = []
+    clusters_set = [[] for i in range(3)]
+    id_mapping = []
+
+    line_count = 0
+    for line_id, line_label in line_labels:
+
+        lines_set.append(lines[line_id])
+        line_labels_set.append([line_count, line_label])
+        id_mapping.append([line_id, line_count])
+        line_count += 1
+
+    line_labels_set = np.array(line_labels_set)
+    id_mapping = np.array(id_mapping)
+
+    num_lines = len(lines_set)
+    lines_set = lines_set + lines_new
+
+    line_new_labels[:, 0] = line_new_labels[:, 0] + num_lines
+
+    line_labels_set = np.vstack([line_labels_set, line_new_labels])
+
+    for cluster_id in range(len(clusters)):
+
+        old_cluster_ids = [id_mapping[:, 1][id_mapping[:, 0] == clusters[cluster_id][i]][0] for i in range(len(clusters[cluster_id]))]
+
+        new_cluster_ids = [id + num_lines for id in line_new_clusters[cluster_id]]
+
+        clusters_set[cluster_id] = old_cluster_ids + new_cluster_ids
+
+    return lines_set, line_labels_set, clusters_set
+
+
 def gen_lineproposals(lines, vps, K, mask_map, gc_map, clusters, line_labels):
 
     # generate lines from gc content
     lines_gc, line_gc_labels, line_gc_clusters = gen_lines_fromGC(gc_map, vps, K)
 
-    # generate lines from inference
-    
+    # combine to lines set
+    lines_set, line_labels_set, clusters_set = comb_to_set(lines_gc, line_gc_labels, line_gc_clusters, lines, line_labels, clusters)
 
-    return lines_gc, line_gc_labels, line_gc_clusters
+    # generate lines from inference
+    new_lines_set, new_line_labels_set, new_clusters_set = infer_lines(lines_set, line_labels_set, clusters_set)
+
+
+    return new_lines_set, new_line_labels_set, new_clusters_set
 
 def processGC(gc_map):
 
