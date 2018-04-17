@@ -54,9 +54,9 @@ def drawClusters(image, lines, clusters, colorPattern, linelabels = None):
     return image
 
 def drawBox(image, vps, f, pp):
-    vp2D = [[] for i in xrange(3)]
+    vps2D = [[] for i in xrange(3)]
     for i in xrange(3):
-        vp2D[i] = np.array([vps[i][0] * f / vps[i][2] + pp[0], vps[i][1] * f / vps[i][2] + pp[1]])
+        vps2D[i] = np.array([vps[i][0] * f / vps[i][2] + pp[0], vps[i][1] * f / vps[i][2] + pp[1]])
 
     space = 20
     width = image.shape[1]
@@ -72,13 +72,13 @@ def drawBox(image, vps, f, pp):
     for i in range(len(points)):
         pt1 = points[i][0], points[i][1]
         for k in xrange(3):
-            pt2 = (np.int(vp2D[k][0]), np.int(vp2D[k][1]))
+            pt2 = (np.int(vps2D[k][0]), np.int(vps2D[k][1]))
             cv2.line(image, pt1, pt2, palatte[k], 1)
 
     return image
 
 def getCameraParas(lines, clusters):
-    vp2D = [[] for i in range(3)]
+    vps2D = [[] for i in range(3)]
     count = 0
     for cluster in clusters:
         lineMatrix = []
@@ -97,23 +97,23 @@ def getCameraParas(lines, clusters):
         A = lineMatrix[:, :2]
         y = -lineMatrix[:, 2]
 
-        pt = np.linalg.inv(A.T.dot(Weights.T).dot(Weights).dot(A)).dot(A.T).dot(Weights.T).dot(Weights).dot(y)
+        # pt = np.linalg.inv(A.T.dot(Weights.T).dot(Weights).dot(A)).dot(A.T).dot(Weights.T).dot(Weights).dot(y)
+        pt = np.linalg.inv(A.T.dot(A)).dot(A.T).dot(y)
 
-        # pt = np.linalg.inv(A.T.dot(A)).dot(A.T).dot(y)
         # # eigen value solution
         # eigenValues, eigenVecs = np.linalg.eig(lineMatrix.T.dot(lineMatrix))
         # pt_eigen = eigenVecs[:,np.argmin(eigenValues)]
         # pt_eigen = pt_eigen/pt_eigen[2]
-        vp2D[count] = pt
+        vps2D[count] = pt
         count = count + 1
 
     CoefMatrix = np.zeros([3, 4])
     count = 0
     for i in range(3):
         for j in range(i+1, 3):
-            CoefMatrix[count][0] = vp2D[i][0] * vp2D[j][0] + vp2D[i][1] * vp2D[j][1]
-            CoefMatrix[count][1] = vp2D[i][0] + vp2D[j][0]
-            CoefMatrix[count][2] = vp2D[i][1] + vp2D[j][1]
+            CoefMatrix[count][0] = vps2D[i][0] * vps2D[j][0] + vps2D[i][1] * vps2D[j][1]
+            CoefMatrix[count][1] = vps2D[i][0] + vps2D[j][0]
+            CoefMatrix[count][2] = vps2D[i][1] + vps2D[j][1]
             CoefMatrix[count][3] = 1.0
             count = count + 1
     eigenValues, eigenVecs = np.linalg.eig(CoefMatrix.T.dot(CoefMatrix))

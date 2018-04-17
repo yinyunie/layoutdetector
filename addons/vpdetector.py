@@ -254,9 +254,9 @@ class VPDetection:
     def lines2Vps(self, thAngle, vps):
         clusters = [[] for i in xrange(3)]
 
-        vp2D = [[] for i in xrange(3)]
+        vps2D = [[] for i in xrange(3)]
         for i in xrange(3):
-            vp2D[i] = np.array([vps[i][0] * self.f / vps[i][2] + self.pp[0], vps[i][1] * self.f / vps[i][2] + self.pp[1]])
+            vps2D[i] = np.array([vps[i][0] * self.f / vps[i][2] + self.pp[0], vps[i][1] * self.f / vps[i][2] + self.pp[1]])
 
         for i in xrange(len(self.lines)):
 
@@ -275,7 +275,7 @@ class VPDetection:
             bestIdx = None
 
             for j in xrange(3):
-                vp2d_c = vp2D[j] - ptm
+                vp2d_c = vps2D[j] - ptm
                 vp2d_c = vp2d_c / np.linalg.norm(vp2d_c)
 
                 dotValue = np.dot(vp2d_c, vc)
