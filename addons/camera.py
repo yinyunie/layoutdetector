@@ -82,17 +82,24 @@ def getCameraParas(lines, clusters):
     count = 0
     for cluster in clusters:
         lineMatrix = []
+        Weights =  []
         for line_id in cluster:
             pt1 = np.array([lines[line_id][0], lines[line_id][1], 1.0])
             pt2 = np.array([lines[line_id][2], lines[line_id][3], 1.0])
             lineMatrix.append( np.cross(pt1, pt2) )
+            Weights.append(np.linalg.norm(pt1 - pt2))
 
         lineMatrix = np.array(lineMatrix)
+        Weights = np.array(Weights)
+        Weights = np.diag(Weights/sum(Weights))
 
-        # MLS estimation
+        # weighted MLS estimation
         A = lineMatrix[:, :2]
         y = -lineMatrix[:, 2]
-        pt = np.linalg.inv(A.T.dot(A)).dot(A.T).dot(y)
+
+        pt = np.linalg.inv(A.T.dot(Weights.T).dot(Weights).dot(A)).dot(A.T).dot(Weights.T).dot(Weights).dot(y)
+
+        # pt = np.linalg.inv(A.T.dot(A)).dot(A.T).dot(y)
         # # eigen value solution
         # eigenValues, eigenVecs = np.linalg.eig(lineMatrix.T.dot(lineMatrix))
         # pt_eigen = eigenVecs[:,np.argmin(eigenValues)]
