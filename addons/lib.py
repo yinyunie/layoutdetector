@@ -157,9 +157,33 @@ def gen_lines_fromGC(gc_map, vps2D):
 
     return lines_gc, line_gc_labels, line_gc_clusters
 
-def comb_to_set(lines_new, line_new_labels, line_new_clusters, lines, line_labels, clusters):
+def filter_lines(table_gclabel_vp, line_labels, clusters):
+
+    new_line_labels = []
+    new_clusters = [[] for i in range(3)]
+
+    for line_id, gc_label in line_labels:
+
+        vpid1 = [line_id in cluster for cluster in clusters].index(True)
+
+        vpid2 = table_gclabel_vp[table_gclabel_vp[:, 0] == gc_label, 1][0]
+
+        if vpid1 == vpid2:
+            new_line_labels.append([line_id, gc_label])
+            new_clusters[vpid1].append(line_id)
+
+    new_line_labels = np.array(new_line_labels)
+
+    return new_line_labels, new_clusters
+
+
+def comb_to_set(lines_new, line_new_labels, line_new_clusters, lines, line_labels, clusters, table_gclabel_vp):
 
     # combines all line information to the a whole set
+
+
+    # filter lines which have a wrong corresponding between gc_label and vp
+    line_labels, clusters = filter_lines(table_gclabel_vp, line_labels, clusters)
 
     # initialisation
     lines_set = []
@@ -300,7 +324,7 @@ def gen_lineproposals(lines, vps, K, mask_map, gc_map, clusters, line_labels):
     table_gclabel_vp = np.array(table_gclabel_vp)
 
     # combine to lines set
-    lines_set, line_labels_set, clusters_set = comb_to_set(lines_gc, line_gc_labels, line_gc_clusters, lines, line_labels, clusters)
+    lines_set, line_labels_set, clusters_set = comb_to_set(lines_gc, line_gc_labels, line_gc_clusters, lines, line_labels, clusters, table_gclabel_vp)
 
     # generate lines from inference
     new_lines_set, new_line_labels_set, new_clusters_set = infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, table_gclabel_vp)
