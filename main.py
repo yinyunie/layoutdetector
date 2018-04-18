@@ -87,7 +87,12 @@ if __name__ == '__main__':
 
     # generate layout proposals
     gc_labels = np.unique(gc_map)
-    gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_vp, vps2D, gc_labels)
+    proposals = gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_vp, vps2D, gc_labels, edge_map)
+
+    image1 = np.copy(image)
+    camera.draw_proposals(image1, proposals[:10])
+    cv2.imshow('', image1)
+    cv2.waitKey(0)
 
     print 'Debug'
 

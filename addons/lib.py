@@ -235,7 +235,7 @@ def comb_to_set(lines_new, line_new_labels, line_new_clusters, lines, line_label
 
     return lines_set, line_labels_set, clusters_set
 
-def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp):
+def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp, im_width):
 
     if plabel1 > 2:
         label_to_gen = 2 * 10 + plabel1
@@ -289,7 +289,15 @@ def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vp
                 corner = np.cross(line1, line2)
                 corner = corner / corner[2]
 
-                newline = [vp[0], vp[1], corner[0], corner[1]]
+                if (corner[:2] - vp)[0] < 0:
+                    lamb = - corner[0]/(corner[0]-vp[0])
+                    endpt = corner[:2] + lamb * (corner[:2] - vp)
+
+                else:
+                    lamb = im_width - corner[0] / (corner[0] - vp[0])
+                    endpt = corner[:2] + lamb * (corner[:2] - vp)
+
+                newline = [endpt[0], endpt[1], corner[0], corner[1]]
 
                 new_lines_set.append(newline)
 
@@ -301,7 +309,7 @@ def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vp
 
     return new_lines_set, new_line_labels_set, new_clusters_set
 
-def infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, table_gclabel_vp):
+def infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, table_gclabel_vp, im_width):
 
     labels_to_gen = np.setdiff1d(gc_labels, [2])
     pair_list1 = np.intersect1d(labels_to_gen, [3, 4])
@@ -310,15 +318,16 @@ def infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, tabl
     for label in labels_to_gen:
 
         if label in pair_list1:
-            lines_set, line_labels_set, clusters_set = infer_line(label, pair_list2, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp)
+            lines_set, line_labels_set, clusters_set = infer_line(label, pair_list2, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp, im_width)
         else:
-            lines_set, line_labels_set, clusters_set = infer_line(label, pair_list1, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp)
+            lines_set, line_labels_set, clusters_set = infer_line(label, pair_list1, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp, im_width)
 
     return lines_set, line_labels_set, clusters_set
 
 def gen_lineproposals(lines, vps2D, gc_map, clusters, line_labels):
 
     gc_labels = np.unique(gc_map)
+    height, width = gc_map.shape
 
     # generate lines from gc content
     ifscaleimg = True
@@ -336,15 +345,115 @@ def gen_lineproposals(lines, vps2D, gc_map, clusters, line_labels):
     lines_set, line_labels_set, clusters_set = comb_to_set(lines_gc, line_gc_labels, line_gc_clusters, lines, line_labels, clusters, table_gclabel_vp)
 
     # generate lines from inference
-    new_lines_set, new_line_labels_set, new_clusters_set = infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, table_gclabel_vp)
+    new_lines_set, new_line_labels_set, new_clusters_set = infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, table_gclabel_vp, width)
 
     return new_lines_set, new_line_labels_set, new_clusters_set, table_gclabel_vp
 
-def gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_vp, vps2D, gc_labels):
+def gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel, edge_map):
 
+    height, width = edge_map.shape
 
+    label_set1 = np.intersect1d(plabels, [3, 4])
+    label_set2 = np.intersect1d(plabels, [5, 6])
 
-    print "Debug"
+    proposals = []
+
+    line_combs = np.stack(np.meshgrid(*lineIDs_gclabel), axis=len(plabels)).reshape(-1, len(plabels))
+
+    for comb_id in xrange(len(line_combs)):
+
+        new_lines = []
+        endpt_dict = {}
+
+        for plabel1 in label_set1:
+            line1_id = line_combs[comb_id][plabels.index(plabel1)]
+            endpt_dict[line1_id] = []
+
+            p1 = np.array([lines_set[line1_id][0], lines_set[line1_id][1], 1.0])
+            p2 = np.array([lines_set[line1_id][2], lines_set[line1_id][3], 1.0])
+            line1 = np.cross(p1, p2)
+
+            for plabel2 in label_set2:
+                line2_id = line_combs[comb_id][plabels.index(plabel2)]
+                endpt_dict[line2_id] = []
+
+                p1 = np.array([lines_set[line2_id][0], lines_set[line2_id][1], 1.0])
+                p2 = np.array([lines_set[line2_id][2], lines_set[line2_id][3], 1.0])
+                line2 = np.cross(p1, p2)
+
+                corner = np.cross(line1, line2)
+                corner = corner / corner[2]
+
+                if (corner[:2] - vp2D)[0] < 0:
+                    lamb = - corner[0]/(corner[0]-vp2D[0])
+                else:
+                    lamb = width - corner[0] / (corner[0] - vp2D[0])
+
+                endpt = corner[:2] + lamb * (corner[:2] - vp2D)
+                newline = [endpt[0], endpt[1], corner[0], corner[1]]
+
+                endpt_dict[line1_id].append(corner[:2])
+                endpt_dict[line2_id].append(corner[:2])
+
+                new_lines.append(newline)
+
+        for line_id in line_combs[comb_id]:
+            corners = endpt_dict[line_id]
+
+            if len(corners) > 1:
+                new_lines.append([coor for pnt in corners for coor in pnt])
+            else:
+                corner = corners[0]
+
+                pt1 = np.array([lines_set[line_id][0], lines_set[line_id][1]])
+                pt2 = np.array([lines_set[line_id][2], lines_set[line_id][3]])
+
+                vpid = [line_id in cluster for cluster in clusters_set].index(True)
+                vp_t = vps2D[vpid]
+
+                if (corner - vp_t).dot(pt2 - pt1) > 0.:
+                    if (pt2 - pt1)[0] > 0.:
+                        lamb = (width - corner[0]) / (pt2[0] - pt1[0])
+                    else:
+                        lamb = - corner[0] / (pt2[0] - pt1[0])
+                    endpnt = corner + lamb * (pt2 - pt1)
+                else:
+                    if (pt1 - pt2)[0] > 0.:
+                        lamb = (width - corner[0]) / (pt1[0] - pt2[0])
+                    else:
+                        lamb = - corner[0] / (pt1[0] - pt2[0])
+                    endpnt = corner + lamb * (pt1 - pt2)
+
+                new_lines.append([endpnt[0], endpnt[1], corner[0], corner[1]])
+
+        proposals.append(new_lines)
+
+    return proposals
+
+def gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_vp, vps2D, gc_labels, edge_map):
+
+    # find out the third vp
+    for gc_label, vp_id in table_gclabel_vp:
+        if '2' not in str(gc_label):
+            vp2D = vps2D[vp_id]
+            break
+
+    plabels = list(np.setdiff1d(gc_labels, [2]))
+
+    lineIDs_gclabel = []
+
+    for plabel in plabels:
+
+        if 2 < plabel:
+            label = 2 * 10 + plabel
+        else:
+            label = plabel * 10 + 2
+
+        lineIDs_gclabel.append(line_labels_set[line_labels_set[:,1] == label, 0])
+
+    proposals = gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel, edge_map)
+
+    return proposals
 
 def processGC(gc_map):
 

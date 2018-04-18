@@ -77,6 +77,22 @@ def drawBox(image, vps, f, pp):
 
     return image
 
+
+def draw_proposals(image, proposals):
+    num_propals = len(proposals)
+    palette = np.random.randint(0, 256, size=[num_propals, 3])
+    count = 0
+
+    for proposal in proposals:
+        for line in proposal:
+            pt1 = (np.int(line[0]), np.int(line[1]))
+            pt2 = (np.int(line[2]), np.int(line[3]))
+            cv2.line(image, pt1, pt2, palette[count, :], 5)
+
+        count = count + 1
+
+    return image
+
 def getCameraParas(lines, clusters):
     vps2D = [[] for i in range(3)]
     count = 0
