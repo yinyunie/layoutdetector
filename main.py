@@ -1,11 +1,10 @@
 if __name__ == '__main__':
     import argparse
     import cv2
-    import sys
     from addons import camera
     import scipy.io as sio
     import numpy as np
-    from addons.lib import line_filter, decide_linelabel, processGC, gen_lineproposals
+    from addons.lib import line_filter, decide_linelabel, processGC, gen_lineproposals, gen_layoutproposals
 
     parser = argparse.ArgumentParser(description="Layout prediction, vanishing point detection and camera orientation decision from "
                                                  "a single image.")
@@ -26,6 +25,11 @@ if __name__ == '__main__':
     # get Camera intrinsic matrix and vanishing points
     mode = 1
     K, vps, clusters, lines = camera.calibrate(image, mode, 1)
+
+    # vps in 2D
+    vps2D = [[] for i in range(3)]
+    for i in xrange(3):
+        vps2D[i] = np.array([vps[i][0] * K[0, 0] / vps[i][2] + K[0, 2], vps[i][1] * K[0, 0] / vps[i][2] + K[1, 2]])
 
     # read coarse layout
     try:
@@ -75,11 +79,15 @@ if __name__ == '__main__':
     cv2.waitKey(0)
 
     # generate line proposals
-    lines_set, line_labels_set, clusters_set = gen_lineproposals(lines, vps, K, mask_map, gc_map, new_clusters, line_labels)
+    lines_set, line_labels_set, clusters_set, table_gclabel_vp = gen_lineproposals(lines, vps2D, gc_map, new_clusters, line_labels)
     image1 = np.copy(image)
     camera.drawClusters(image1, lines_set, clusters_set, 'vps')
     cv2.imshow('', image1)
     cv2.waitKey(0)
+
+    # generate layout proposals
+    gc_labels = np.unique(gc_map)
+    gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_vp, vps2D, gc_labels)
 
     print 'Debug'
 

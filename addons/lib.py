@@ -76,7 +76,16 @@ def gen_line_clusters(vps2D, lines):
 
     return line_clusters
 
-def gen_lines_fromGC(gc_map, vps2D):
+def gen_lines_fromGC(gc_map, vps2D, ifscaleimg):
+
+    if ifscaleimg:
+        # downsampling for efficiency, comment it if not use
+        height = 100
+        size0 = gc_map.shape[0]
+        gc_map = reshape_map(gc_map, height)
+        im_scale = size0 / np.double(gc_map.shape[0])
+    else:
+        im_scale = 1.
 
     # decide which kinds of lines we should generate
     gc_labels = np.unique(gc_map)
@@ -90,6 +99,7 @@ def gen_lines_fromGC(gc_map, vps2D):
     if 5 in gc_labels:
         # generate line between 2 and 5
         nline = gen_line_fromGC(gc_map, 2, 5)
+        nline = [corr * im_scale for corr in nline]
 
         lines_gc.append(nline)
         line_gc_labels.append([line_count, 25])
@@ -98,6 +108,7 @@ def gen_lines_fromGC(gc_map, vps2D):
     if 6 in gc_labels:
         # generate line between 2 and 6
         nline = gen_line_fromGC(gc_map, 2, 6)
+        nline = [corr * im_scale for corr in nline]
 
         lines_gc.append(nline)
         line_gc_labels.append([line_count, 26])
@@ -106,6 +117,7 @@ def gen_lines_fromGC(gc_map, vps2D):
     if 3 in gc_labels:
         # generate line between 2 and 3
         nline = gen_line_fromGC(gc_map, 2, 3)
+        nline = [corr * im_scale for corr in nline]
 
         lines_gc.append(nline)
         line_gc_labels.append([line_count, 23])
@@ -114,6 +126,7 @@ def gen_lines_fromGC(gc_map, vps2D):
     if 4 in gc_labels:
         # generate line between 2 and 4
         nline = gen_line_fromGC(gc_map, 2, 4)
+        nline = [corr * im_scale for corr in nline]
 
         lines_gc.append(nline)
         line_gc_labels.append([line_count, 24])
@@ -122,6 +135,7 @@ def gen_lines_fromGC(gc_map, vps2D):
     if 3 in gc_labels and 5 in gc_labels:
         # generate line between 3 and 5
         nline = gen_line_fromGC(gc_map, 3, 5)
+        nline = [corr * im_scale for corr in nline]
 
         lines_gc.append(nline)
         line_gc_labels.append([line_count, 35])
@@ -130,6 +144,7 @@ def gen_lines_fromGC(gc_map, vps2D):
     if 3 in gc_labels and 6 in gc_labels:
         # generate line between 3 and 6
         nline = gen_line_fromGC(gc_map, 3, 6)
+        nline = [corr * im_scale for corr in nline]
 
         lines_gc.append(nline)
         line_gc_labels.append([line_count, 36])
@@ -138,6 +153,7 @@ def gen_lines_fromGC(gc_map, vps2D):
     if 4 in gc_labels and 5 in gc_labels:
         # generate line between 4 and 5
         nline = gen_line_fromGC(gc_map, 4, 5)
+        nline = [corr * im_scale for corr in nline]
 
         lines_gc.append(nline)
         line_gc_labels.append([line_count, 45])
@@ -146,6 +162,7 @@ def gen_lines_fromGC(gc_map, vps2D):
     if 4 in gc_labels and 6 in gc_labels:
         # generate line between 4 and 6
         nline = gen_line_fromGC(gc_map, 4, 6)
+        nline = [corr * im_scale for corr in nline]
 
         lines_gc.append(nline)
         line_gc_labels.append([line_count, 46])
@@ -157,7 +174,7 @@ def gen_lines_fromGC(gc_map, vps2D):
 
     return lines_gc, line_gc_labels, line_gc_clusters
 
-def filter_lines(table_gclabel_vp, line_labels, clusters):
+def ruleout(table_gclabel_vp, line_labels, clusters):
 
     new_line_labels = []
     new_clusters = [[] for i in range(3)]
@@ -181,9 +198,8 @@ def comb_to_set(lines_new, line_new_labels, line_new_clusters, lines, line_label
 
     # combines all line information to the a whole set
 
-
     # filter lines which have a wrong corresponding between gc_label and vp
-    line_labels, clusters = filter_lines(table_gclabel_vp, line_labels, clusters)
+    line_labels, clusters = ruleout(table_gclabel_vp, line_labels, clusters)
 
     # initialisation
     lines_set = []
@@ -285,8 +301,6 @@ def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vp
 
     return new_lines_set, new_line_labels_set, new_clusters_set
 
-
-
 def infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, table_gclabel_vp):
 
     labels_to_gen = np.setdiff1d(gc_labels, [2])
@@ -302,18 +316,13 @@ def infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, tabl
 
     return lines_set, line_labels_set, clusters_set
 
-
-
-def gen_lineproposals(lines, vps, K, mask_map, gc_map, clusters, line_labels):
-
-    vps2D = [[] for i in range(3)]
-    for i in xrange(3):
-        vps2D[i] = np.array([vps[i][0] * K[0, 0] / vps[i][2] + K[0, 2], vps[i][1] * K[0, 0] / vps[i][2] + K[1, 2]])
+def gen_lineproposals(lines, vps2D, gc_map, clusters, line_labels):
 
     gc_labels = np.unique(gc_map)
 
     # generate lines from gc content
-    lines_gc, line_gc_labels, line_gc_clusters = gen_lines_fromGC(gc_map, vps2D)
+    ifscaleimg = True
+    lines_gc, line_gc_labels, line_gc_clusters = gen_lines_fromGC(gc_map, vps2D, ifscaleimg)
 
     # correspond gc_label to vanishing point id
     table_gclabel_vp = []
@@ -329,8 +338,13 @@ def gen_lineproposals(lines, vps, K, mask_map, gc_map, clusters, line_labels):
     # generate lines from inference
     new_lines_set, new_line_labels_set, new_clusters_set = infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, table_gclabel_vp)
 
+    return new_lines_set, new_line_labels_set, new_clusters_set, table_gclabel_vp
 
-    return new_lines_set, new_line_labels_set, new_clusters_set
+def gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_vp, vps2D, gc_labels):
+
+
+
+    print "Debug"
 
 def processGC(gc_map):
 
