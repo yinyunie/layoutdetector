@@ -274,10 +274,6 @@ def infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels):
         else:
             lines_set, line_labels_set, clusters_set = infer_line(label, pair_list1, lines_set, line_labels_set, clusters_set, vps2D)
 
-        # REMENBER TO ADD NEW LINE TO LINE SET
-        # Refresh(lines_set)
-
-
     return lines_set, line_labels_set, clusters_set
 
 
