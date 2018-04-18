@@ -195,12 +195,16 @@ def comb_to_set(lines_new, line_new_labels, line_new_clusters, lines, line_label
 
     return lines_set, line_labels_set, clusters_set
 
-def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vps2D):
+def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp):
 
     if plabel1 > 2:
         label_to_gen = 2 * 10 + plabel1
     else:
         label_to_gen = plabel1 * 10 + 2
+
+    vpid = table_gclabel_vp[table_gclabel_vp[:, 0] == label_to_gen, 1][0]
+
+    vp = vps2D[vpid]
 
     new_lines_set = lines_set[:]
     new_line_labels_set = line_labels_set[:]
@@ -225,14 +229,13 @@ def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vp
         for id1 in lineID_set1:
             for id2 in lineID_set2:
                 # search the vp corresponding to the corner
-                vpid1 = [id1 in cluster for cluster in new_clusters_set]
-                vpid2 = [id2 in cluster for cluster in new_clusters_set]
+                vpid1 = [id1 in cluster for cluster in new_clusters_set].index(True)
+                vpid2 = [id2 in cluster for cluster in new_clusters_set].index(True)
 
-                if vpid1 == vpid2:
+                if vpid1 != table_gclabel_vp[table_gclabel_vp[:, 0] == label1, 1][0]:
                     continue
-                vpid = [id for id in range(len(vpid1)) if vpid1[id] == False and vpid2[id] == False][0]
-
-                vp = vps2D[vpid]
+                if vpid2 != table_gclabel_vp[table_gclabel_vp[:, 0] == label2, 1][0]:
+                    continue
 
                 p1 = np.array([new_lines_set[id1][0], new_lines_set[id1][1], 1.0])
                 p2 = np.array([new_lines_set[id1][2], new_lines_set[id1][3], 1.0])
@@ -256,12 +259,11 @@ def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vp
 
                 count += 1
 
-
     return new_lines_set, new_line_labels_set, new_clusters_set
 
 
 
-def infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels):
+def infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, table_gclabel_vp):
 
     labels_to_gen = np.setdiff1d(gc_labels, [2])
     pair_list1 = np.intersect1d(labels_to_gen, [3, 4])
@@ -270,9 +272,9 @@ def infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels):
     for label in labels_to_gen:
 
         if label in pair_list1:
-            lines_set, line_labels_set, clusters_set = infer_line(label, pair_list2, lines_set, line_labels_set, clusters_set, vps2D)
+            lines_set, line_labels_set, clusters_set = infer_line(label, pair_list2, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp)
         else:
-            lines_set, line_labels_set, clusters_set = infer_line(label, pair_list1, lines_set, line_labels_set, clusters_set, vps2D)
+            lines_set, line_labels_set, clusters_set = infer_line(label, pair_list1, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp)
 
     return lines_set, line_labels_set, clusters_set
 
@@ -289,11 +291,19 @@ def gen_lineproposals(lines, vps, K, mask_map, gc_map, clusters, line_labels):
     # generate lines from gc content
     lines_gc, line_gc_labels, line_gc_clusters = gen_lines_fromGC(gc_map, vps2D)
 
+    # correspond gc_label to vanishing point id
+    table_gclabel_vp = []
+    for line_id, label in line_gc_labels:
+        vpid = [line_id in cluster for cluster in line_gc_clusters].index(True)
+        table_gclabel_vp.append([label, vpid])
+
+    table_gclabel_vp = np.array(table_gclabel_vp)
+
     # combine to lines set
     lines_set, line_labels_set, clusters_set = comb_to_set(lines_gc, line_gc_labels, line_gc_clusters, lines, line_labels, clusters)
 
     # generate lines from inference
-    new_lines_set, new_line_labels_set, new_clusters_set = infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels)
+    new_lines_set, new_line_labels_set, new_clusters_set = infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, table_gclabel_vp)
 
 
     return new_lines_set, new_line_labels_set, new_clusters_set
