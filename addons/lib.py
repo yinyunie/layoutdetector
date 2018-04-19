@@ -3,6 +3,7 @@ from pyflann import *
 import sys
 sys.path.append('/home/ynie1/Library/liblinear-2.20/python')
 from liblinearutil import *
+from addons.predef import gc_def, gc_neighbours
 
 def gen_line_fromGC(gc_map, gc_label1, gc_label2):
 
@@ -95,78 +96,21 @@ def gen_lines_fromGC(gc_map, vps2D, ifscaleimg):
     line_count = 0
     line_gc_labels = []
 
-    # firsy we use logistic regression to generate essential lines
-    if 5 in gc_labels:
-        # generate line between 2 and 5
-        nline = gen_line_fromGC(gc_map, 2, 5)
-        nline = [corr * im_scale for corr in nline]
+    # firsy we use SVM to generate essential lines
+    for plabel1, plabel2 in gc_neighbours:
+        if (plabel1 in gc_labels) and (plabel2 in gc_labels):
+            # generate line between plabel1 and plabel2
+            nline = gen_line_fromGC(gc_map, plabel1, plabel2)
+            nline = [corr * im_scale for corr in nline]
 
-        lines_gc.append(nline)
-        line_gc_labels.append([line_count, 25])
-        line_count += 1
+            lines_gc.append(nline)
+            if plabel1 < plabel2:
+                label = plabel1 * 10 + plabel2
+            else:
+                label = plabel2 * 10 + plabel1
 
-    if 6 in gc_labels:
-        # generate line between 2 and 6
-        nline = gen_line_fromGC(gc_map, 2, 6)
-        nline = [corr * im_scale for corr in nline]
-
-        lines_gc.append(nline)
-        line_gc_labels.append([line_count, 26])
-        line_count += 1
-
-    if 3 in gc_labels:
-        # generate line between 2 and 3
-        nline = gen_line_fromGC(gc_map, 2, 3)
-        nline = [corr * im_scale for corr in nline]
-
-        lines_gc.append(nline)
-        line_gc_labels.append([line_count, 23])
-        line_count += 1
-
-    if 4 in gc_labels:
-        # generate line between 2 and 4
-        nline = gen_line_fromGC(gc_map, 2, 4)
-        nline = [corr * im_scale for corr in nline]
-
-        lines_gc.append(nline)
-        line_gc_labels.append([line_count, 24])
-        line_count += 1
-
-    if 3 in gc_labels and 5 in gc_labels:
-        # generate line between 3 and 5
-        nline = gen_line_fromGC(gc_map, 3, 5)
-        nline = [corr * im_scale for corr in nline]
-
-        lines_gc.append(nline)
-        line_gc_labels.append([line_count, 35])
-        line_count += 1
-
-    if 3 in gc_labels and 6 in gc_labels:
-        # generate line between 3 and 6
-        nline = gen_line_fromGC(gc_map, 3, 6)
-        nline = [corr * im_scale for corr in nline]
-
-        lines_gc.append(nline)
-        line_gc_labels.append([line_count, 36])
-        line_count += 1
-
-    if 4 in gc_labels and 5 in gc_labels:
-        # generate line between 4 and 5
-        nline = gen_line_fromGC(gc_map, 4, 5)
-        nline = [corr * im_scale for corr in nline]
-
-        lines_gc.append(nline)
-        line_gc_labels.append([line_count, 45])
-        line_count += 1
-
-    if 4 in gc_labels and 6 in gc_labels:
-        # generate line between 4 and 6
-        nline = gen_line_fromGC(gc_map, 4, 6)
-        nline = [corr * im_scale for corr in nline]
-
-        lines_gc.append(nline)
-        line_gc_labels.append([line_count, 46])
-        line_count += 1
+            line_gc_labels.append([line_count, label])
+            line_count += 1
 
     line_gc_clusters = gen_line_clusters(vps2D, lines_gc)
 
@@ -194,50 +138,39 @@ def ruleout(table_gclabel_vp, line_labels, clusters):
     return new_line_labels, new_clusters
 
 
-def comb_to_set(lines_new, line_new_labels, line_new_clusters, lines, line_labels, clusters, table_gclabel_vp):
+def comb_to_set(lines_new, line_new_labels, line_new_clusters, lines, line_labels, clusters, gc_labels, table_gclabel_vp):
 
     # combines all line information to the a whole set
+    plabels = np.setdiff1d(gc_labels, [2])
 
     # initialisation
-    lines_set = []
-    line_labels_set = []
-    clusters_set = [[] for i in range(3)]
-    id_mapping = []
+    lines_set = lines[:]
+    line_labels_set = line_labels[:]
+    clusters_set = clusters[:]
+    line_count = len(lines)
 
-    line_count = 0
-    for line_id, line_label in line_labels:
+    for plabel in plabels:
+        if plabel > gc_def['frontal_wallID']:
+            label1 = gc_def['frontal_wallID'] * 10 + plabel
+        else:
+            label1 = plabel * 10 + gc_def['frontal_wallID']
 
-        lines_set.append(lines[line_id])
-        line_labels_set.append([line_count, line_label])
-        id_mapping.append([line_id, line_count])
-        line_count += 1
+        if label1 not in line_labels[:,1]:
+            line_id = line_new_labels[line_new_labels[:, 1] == label1, 0][0]
 
-    line_labels_set = np.array(line_labels_set)
-    id_mapping = np.array(id_mapping)
-
-    num_lines = len(lines_set)
-    lines_set = lines_set + lines_new
-
-    line_new_labels[:, 0] = line_new_labels[:, 0] + num_lines
-
-    line_labels_set = np.vstack([line_labels_set, line_new_labels])
-
-    for cluster_id in range(len(clusters)):
-
-        old_cluster_ids = [id_mapping[:, 1][id_mapping[:, 0] == clusters[cluster_id][i]][0] for i in range(len(clusters[cluster_id]))]
-
-        new_cluster_ids = [id + num_lines for id in line_new_clusters[cluster_id]]
-
-        clusters_set[cluster_id] = old_cluster_ids + new_cluster_ids
+            lines_set.append(lines_new[line_id])
+            line_labels_set = np.append(line_labels_set, [[line_count, label1]], axis=0)
+            clusters_set[table_gclabel_vp[table_gclabel_vp[:, 0] == label1, 1][0]].append(line_count)
+            line_count = line_count + 1
 
     return lines_set, line_labels_set, clusters_set
 
 def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp, im_width, mask_map):
 
-    if plabel1 > 2:
-        label_to_gen = 2 * 10 + plabel1
+    if plabel1 > gc_def['frontal_wallID']:
+        label_to_gen = gc_def['frontal_wallID'] * 10 + plabel1
     else:
-        label_to_gen = plabel1 * 10 + 2
+        label_to_gen = plabel1 * 10 + gc_def['frontal_wallID']
 
     vpid = table_gclabel_vp[table_gclabel_vp[:, 0] == label_to_gen, 1][0]
 
@@ -255,10 +188,10 @@ def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vp
         else:
             label1 = plabel1 * 10 + plabel2
 
-        if plabel2 > 2:
-            label2 = 2 * 10 + plabel2
+        if plabel2 > gc_def['frontal_wallID']:
+            label2 = gc_def['frontal_wallID'] * 10 + plabel2
         else:
-            label2 = plabel2 * 10 + 2
+            label2 = plabel2 * 10 + gc_def['frontal_wallID']
 
         lineID_set1 = new_line_labels_set[new_line_labels_set[:, 1] == label1, 0]
         lineID_set2 = new_line_labels_set[new_line_labels_set[:, 1] == label2, 0]
@@ -313,9 +246,9 @@ def infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, tabl
 
     __, im_width = mask_map.shape
 
-    labels_to_gen = np.setdiff1d(gc_labels, [2])
-    pair_list1 = np.intersect1d(labels_to_gen, [3, 4])
-    pair_list2 = np.intersect1d(labels_to_gen, [5, 6])
+    labels_to_gen = np.setdiff1d(gc_labels, [gc_def['backgroundID'], gc_def['frontal_wallID']])
+    pair_list1 = np.intersect1d(labels_to_gen, [gc_def['left_wallID'], gc_def['right_wallID']])
+    pair_list2 = np.intersect1d(labels_to_gen, [gc_def['floor_ID'], gc_def['ceiling_ID']])
 
     for label in labels_to_gen:
 
@@ -381,7 +314,7 @@ def gen_lineproposals(lines, vps2D, gc_map, clusters, line_labels, mask_map, ifi
         lines_set, line_labels_set, clusters_set = infer_lines(lines_set, line_labels_set, clusters_set,
                                                                            vps2D, gc_labels, table_gclabel_vp, mask_map)
     # combine to lines set
-    new_lines_set, new_line_labels_set, new_clusters_set = comb_to_set(lines_gc, line_gc_labels, line_gc_clusters, lines_set, line_labels_set, clusters_set, table_gclabel_vp)
+    new_lines_set, new_line_labels_set, new_clusters_set = comb_to_set(lines_gc, line_gc_labels, line_gc_clusters, lines_set, line_labels_set, clusters_set, gc_labels, table_gclabel_vp)
 
     return  new_lines_set, new_line_labels_set, new_clusters_set, table_gclabel_vp
 
@@ -390,8 +323,8 @@ def gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel
 
     __, width = edge_map.shape
 
-    label_set1 = np.intersect1d(plabels, [3, 4])
-    label_set2 = np.intersect1d(plabels, [5, 6])
+    label_set1 = np.intersect1d(plabels, [gc_def['left_wallID'], gc_def['right_wallID']])
+    label_set2 = np.intersect1d(plabels, [gc_def['floor_ID'], gc_def['ceiling_ID']])
 
     proposals = []
 
@@ -471,20 +404,20 @@ def gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_
 
     # find out the third vp
     for gc_label, vp_id in table_gclabel_vp:
-        if '2' not in str(gc_label):
+        if str(gc_def['frontal_wallID']) not in str(gc_label):
             vp2D = vps2D[vp_id]
             break
 
-    plabels = list(np.setdiff1d(gc_labels, [2]))
+    plabels = list(np.setdiff1d(gc_labels, [gc_def['backgroundID'], gc_def['frontal_wallID']]))
 
     lineIDs_gclabel = []
 
     for plabel in plabels:
 
-        if 2 < plabel:
-            label = 2 * 10 + plabel
+        if gc_def['frontal_wallID'] < plabel:
+            label = gc_def['frontal_wallID'] * 10 + plabel
         else:
-            label = plabel * 10 + 2
+            label = plabel * 10 + gc_def['frontal_wallID']
 
         lineIDs_gclabel.append(line_labels_set[line_labels_set[:,1] == label, 0])
 
