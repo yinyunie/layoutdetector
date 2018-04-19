@@ -90,10 +90,15 @@ if __name__ == '__main__':
     gc_labels = np.unique(gc_map)
 
     # to embed layout scoring function
-    proposals = gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_vp, vps2D, gc_labels, edge_map)
+    proposals, score_list = gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_vp, vps2D, gc_labels, edge_map)
 
     image1 = np.copy(image)
     camera.draw_proposals(image1, [proposals[i] for i in np.random.randint(0, len(proposals), 10)])
+    cv2.imshow('', image1)
+    cv2.waitKey(0)
+
+    image1 = np.copy(image)
+    camera.draw_proposals(image1, [proposals[score_list.index(max(score_list))]])
     cv2.imshow('', image1)
     cv2.waitKey(0)
 

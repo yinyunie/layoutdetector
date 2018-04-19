@@ -219,7 +219,7 @@ def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vp
                 corner = np.cross(line1, line2)
                 corner = corner / corner[2]
 
-                if mask_map[int(corner[1]), int(corner[0])] == 0:
+                if mask_map[int(round(corner[1])), int(round(corner[0]))] == 0:
                     continue
 
                 if (corner[:2] - vp)[0] < 0:
@@ -318,6 +318,47 @@ def gen_lineproposals(lines, vps2D, gc_map, clusters, line_labels, mask_map, ifi
 
     return  new_lines_set, new_line_labels_set, new_clusters_set, table_gclabel_vp
 
+def get_score(lines, edge_map):
+
+    total_score = 0.
+    total_num = 0
+
+    step_len = 10.
+
+    for line in lines:
+        pt1 = np.array([line[2], line[3]])
+        pt2 = np.array([line[0], line[1]])
+        length = np.linalg.norm(pt1 - pt2)
+        step_vec = (pt2 - pt1) / length
+
+        c_len = 0
+        pnts = []
+
+        while c_len < length:
+
+            pnt = pt1 + c_len * step_vec
+
+            c_len += step_len
+
+            if 0<=pnt[0]<=edge_map.shape[1]-1 and 0<=pnt[1]<=edge_map.shape[0]-1:
+
+                pnts.append(pnt)
+
+            else:
+                break
+
+        pnts = np.round(pnts)
+
+        scores = [edge_map[int(hid), int(wid)] for wid, hid in pnts]
+
+        score = sum(scores)
+        num = len(scores)
+
+        total_score += score
+        total_num += num
+
+    return total_score/total_num
+
 
 def gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel, edge_map):
 
@@ -327,6 +368,8 @@ def gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel
     label_set2 = np.intersect1d(plabels, [gc_def['floor_ID'], gc_def['ceiling_ID']])
 
     proposals = []
+
+    score_list = []
 
     line_combs = np.stack(np.meshgrid(*lineIDs_gclabel), axis=len(plabels)).reshape(-1, len(plabels))
 
@@ -396,9 +439,15 @@ def gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel
 
                 new_lines.append([endpnt[0], endpnt[1], corner[0], corner[1]])
 
+        layout_score = get_score(new_lines, edge_map)
+
+        score_list.append(layout_score)
         proposals.append(new_lines)
 
-    return proposals
+        if comb_id % 100 == 0:
+            print "Current %d th step; Score: %f.\n" % (comb_id, layout_score)
+
+    return proposals, score_list
 
 def gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_vp, vps2D, gc_labels, edge_map):
 
@@ -421,9 +470,9 @@ def gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_
 
         lineIDs_gclabel.append(line_labels_set[line_labels_set[:,1] == label, 0])
 
-    proposals = gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel, edge_map)
+    proposals, score_list = gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel, edge_map)
 
-    return proposals
+    return proposals, score_list
 
 def processGC(gc_map):
 
