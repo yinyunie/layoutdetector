@@ -88,6 +88,8 @@ if __name__ == '__main__':
 
     # generate layout proposals
     gc_labels = np.unique(gc_map)
+
+    # to embed layout scoring function
     proposals = gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_vp, vps2D, gc_labels, edge_map)
 
     image1 = np.copy(image)
