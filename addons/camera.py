@@ -93,7 +93,7 @@ def draw_proposals(image, proposals):
 
     return image
 
-def getCameraParas(lines, clusters):
+def getCameraParas(lines, clusters, ifweighted):
     vps2D = [[] for i in range(3)]
     count = 0
     for cluster in clusters:
@@ -106,15 +106,17 @@ def getCameraParas(lines, clusters):
             Weights.append(np.linalg.norm(pt1 - pt2))
 
         lineMatrix = np.array(lineMatrix)
-        Weights = np.array(Weights)
-        Weights = np.diag(Weights/sum(Weights))
 
-        # weighted MLS estimation
         A = lineMatrix[:, :2]
         y = -lineMatrix[:, 2]
 
-        # pt = np.linalg.inv(A.T.dot(Weights.T).dot(Weights).dot(A)).dot(A.T).dot(Weights.T).dot(Weights).dot(y)
-        pt = np.linalg.inv(A.T.dot(A)).dot(A.T).dot(y)
+        if ifweighted:
+            # weighted MLS estimation
+            Weights = np.array(Weights)
+            Weights = np.diag(Weights/sum(Weights))
+            pt = np.linalg.inv(A.T.dot(Weights.T).dot(Weights).dot(A)).dot(A.T).dot(Weights.T).dot(Weights).dot(y)
+        else:
+            pt = np.linalg.inv(A.T.dot(A)).dot(A.T).dot(y)
 
         # # eigen value solution
         # eigenValues, eigenVecs = np.linalg.eig(lineMatrix.T.dot(lineMatrix))
@@ -163,7 +165,8 @@ def calibrate(image, mode = 0, ifplot = 1):
     if mode == 0:
         K = [[f, 0., pp[0]], [0., f, pp[1]], [0., 0., 1.]]
     elif mode == 1:
-        K = getCameraParas(lines, clusters)
+        ifweighted = False
+        K = getCameraParas(lines, clusters, ifweighted)
         # Its ok to replace with the new camera intrinsic parameters to estimate the camera extrinsic matrix,
         # but the difference is minor.
         detector = VPDetection(lines, [K[0, 2], K[1, 2]], K[0, 0], noiseRatio)

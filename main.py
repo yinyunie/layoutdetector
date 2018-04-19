@@ -79,7 +79,7 @@ if __name__ == '__main__':
     cv2.waitKey(0)
 
     # generate line proposals
-    lines_set, line_labels_set, clusters_set, table_gclabel_vp = gen_lineproposals(lines, vps2D, gc_map, new_clusters, line_labels)
+    lines_set, line_labels_set, clusters_set, table_gclabel_vp = gen_lineproposals(lines, vps2D, gc_map, new_clusters, line_labels, mask_map)
     image1 = np.copy(image)
     camera.drawClusters(image1, lines_set, clusters_set, 'vps')
     cv2.imshow('', image1)

@@ -235,7 +235,7 @@ def comb_to_set(lines_new, line_new_labels, line_new_clusters, lines, line_label
 
     return lines_set, line_labels_set, clusters_set
 
-def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp, im_width):
+def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp, im_width, mask_map):
 
     if plabel1 > 2:
         label_to_gen = 2 * 10 + plabel1
@@ -289,6 +289,9 @@ def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vp
                 corner = np.cross(line1, line2)
                 corner = corner / corner[2]
 
+                if mask_map[int(corner[1]), int(corner[0])] == 0:
+                    continue
+
                 if (corner[:2] - vp)[0] < 0:
                     lamb = - corner[0]/(corner[0]-vp[0])
                     endpt = corner[:2] + lamb * (corner[:2] - vp)
@@ -309,7 +312,9 @@ def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vp
 
     return new_lines_set, new_line_labels_set, new_clusters_set
 
-def infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, table_gclabel_vp, im_width):
+def infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, table_gclabel_vp, mask_map):
+
+    __, im_width = mask_map.shape
 
     labels_to_gen = np.setdiff1d(gc_labels, [2])
     pair_list1 = np.intersect1d(labels_to_gen, [3, 4])
@@ -318,16 +323,15 @@ def infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, tabl
     for label in labels_to_gen:
 
         if label in pair_list1:
-            lines_set, line_labels_set, clusters_set = infer_line(label, pair_list2, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp, im_width)
+            lines_set, line_labels_set, clusters_set = infer_line(label, pair_list2, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp, im_width, mask_map)
         else:
-            lines_set, line_labels_set, clusters_set = infer_line(label, pair_list1, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp, im_width)
+            lines_set, line_labels_set, clusters_set = infer_line(label, pair_list1, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp, im_width, mask_map)
 
     return lines_set, line_labels_set, clusters_set
 
-def gen_lineproposals(lines, vps2D, gc_map, clusters, line_labels):
+def gen_lineproposals(lines, vps2D, gc_map, clusters, line_labels, mask_map):
 
     gc_labels = np.unique(gc_map)
-    height, width = gc_map.shape
 
     # generate lines from gc content
     ifscaleimg = True
@@ -345,7 +349,7 @@ def gen_lineproposals(lines, vps2D, gc_map, clusters, line_labels):
     lines_set, line_labels_set, clusters_set = comb_to_set(lines_gc, line_gc_labels, line_gc_clusters, lines, line_labels, clusters, table_gclabel_vp)
 
     # generate lines from inference
-    new_lines_set, new_line_labels_set, new_clusters_set = infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, table_gclabel_vp, width)
+    new_lines_set, new_line_labels_set, new_clusters_set = infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, table_gclabel_vp, mask_map)
 
     return new_lines_set, new_line_labels_set, new_clusters_set, table_gclabel_vp
 
