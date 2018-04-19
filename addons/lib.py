@@ -198,9 +198,6 @@ def comb_to_set(lines_new, line_new_labels, line_new_clusters, lines, line_label
 
     # combines all line information to the a whole set
 
-    # filter lines which have a wrong corresponding between gc_label and vp
-    line_labels, clusters = ruleout(table_gclabel_vp, line_labels, clusters)
-
     # initialisation
     lines_set = []
     line_labels_set = []
@@ -329,6 +326,38 @@ def infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, tabl
 
     return lines_set, line_labels_set, clusters_set
 
+def resort_lines(lines, line_labels, clusters, table_gclabel_vp):
+
+    # filter lines which have a wrong corresponding between gc_label and vp
+    line_labels, clusters = ruleout(table_gclabel_vp, line_labels, clusters)
+
+    # initialisation
+    lines_set = []
+    line_labels_set = []
+    clusters_set = [[] for i in range(3)]
+    id_mapping = []
+
+    line_count = 0
+
+    for line_id, line_label in line_labels:
+
+        lines_set.append(lines[line_id])
+        line_labels_set.append([line_count, line_label])
+        id_mapping.append([line_id, line_count])
+        line_count += 1
+
+    line_labels_set = np.array(line_labels_set)
+    id_mapping = np.array(id_mapping)
+
+    for cluster_id in range(len(clusters)):
+
+        cluster_ids = [id_mapping[:, 1][id_mapping[:, 0] == clusters[cluster_id][i]][0] for i in
+                       range(len(clusters[cluster_id]))]
+
+        clusters_set[cluster_id] = cluster_ids
+
+    return lines_set, line_labels_set, clusters_set
+
 def gen_lineproposals(lines, vps2D, gc_map, clusters, line_labels, mask_map, ifinferLines):
 
     gc_labels = np.unique(gc_map)
@@ -345,18 +374,16 @@ def gen_lineproposals(lines, vps2D, gc_map, clusters, line_labels, mask_map, ifi
 
     table_gclabel_vp = np.array(table_gclabel_vp)
 
-    # combine to lines set
-    lines_set, line_labels_set, clusters_set = comb_to_set(lines_gc, line_gc_labels, line_gc_clusters, lines, line_labels, clusters, table_gclabel_vp)
+    lines_set, line_labels_set, clusters_set = resort_lines(lines, line_labels, clusters, table_gclabel_vp)
 
     if ifinferLines:
-    # generate lines from inference
-        new_lines_set, new_line_labels_set, new_clusters_set = infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, table_gclabel_vp, mask_map)
+        # generate lines from inference
+        lines_set, line_labels_set, clusters_set = infer_lines(lines_set, line_labels_set, clusters_set,
+                                                                           vps2D, gc_labels, table_gclabel_vp, mask_map)
+    # combine to lines set
+    new_lines_set, new_line_labels_set, new_clusters_set = comb_to_set(lines_gc, line_gc_labels, line_gc_clusters, lines_set, line_labels_set, clusters_set, table_gclabel_vp)
 
-        return new_lines_set, new_line_labels_set, new_clusters_set, table_gclabel_vp
-
-    else:
-
-        return lines_set, line_labels_set, clusters_set, table_gclabel_vp
+    return  new_lines_set, new_line_labels_set, new_clusters_set, table_gclabel_vp
 
 
 def gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel, edge_map):
