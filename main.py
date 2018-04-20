@@ -23,7 +23,7 @@ if __name__ == '__main__':
         print 'Cannot open the image file, please verify the image address.'
 
     # get Camera intrinsic matrix and vanishing points
-    mode = 0
+    mode = 2
     K, vps, clusters, lines = camera.calibrate(image, mode, 1)
 
     # vps in 2D
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     cv2.waitKey(0)
 
     # generate line proposals
-    ifinferLines = False
+    ifinferLines = True
     lines_set, line_labels_set, clusters_set, table_gclabel_vp = gen_lineproposals(lines, vps2D, gc_map, new_clusters, line_labels, mask_map, ifinferLines)
     image1 = np.copy(image)
     camera.drawClusters(image1, lines_set, clusters_set, 'vps')

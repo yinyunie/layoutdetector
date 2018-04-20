@@ -35,7 +35,7 @@ def gen_line_fromGC(gc_map, gc_label1, gc_label2):
 
     return [x1, y1, x2, y2]
 
-def gen_line_clusters(gc_labels, cnt, vps2D, lines, line_gc_labels):
+def gen_line_clusters(gc_labels, cnt, vps2D, line_gc_labels):
     # decide which vps this line belongs to
     line_clusters = [[] for i in range(3)]
     vps2D = np.array(vps2D)
@@ -104,7 +104,7 @@ def gen_lines_fromGC(gc_map, vps2D, ifscaleimg):
 
     line_gc_labels = np.array(line_gc_labels)
 
-    line_gc_clusters = gen_line_clusters(gc_labels, cnt, vps2D, lines_gc, line_gc_labels)
+    line_gc_clusters = gen_line_clusters(gc_labels, cnt, vps2D, line_gc_labels)
 
     return lines_gc, line_gc_labels, line_gc_clusters
 
@@ -436,7 +436,7 @@ def gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel
         score_list.append(layout_score)
         proposals.append(new_lines)
 
-        if comb_id % 100 == 0:
+        if comb_id % 1000 == 0:
             print "Current %d th step; Score: %f.\n" % (comb_id, layout_score)
 
     return proposals, score_list
