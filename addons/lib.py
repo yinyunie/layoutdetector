@@ -128,7 +128,7 @@ def ruleout(table_gclabel_vp, line_labels, clusters):
     return new_line_labels, new_clusters
 
 
-def comb_to_set(lines_new, line_new_labels, line_new_clusters, lines, line_labels, clusters, gc_labels, table_gclabel_vp):
+def comb_to_set(lines_new, line_new_labels, lines, line_labels, clusters, gc_labels, table_gclabel_vp):
 
     # combines all line information to the a whole set
     plabels = np.setdiff1d(gc_labels, [2])
@@ -166,10 +166,10 @@ def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vp
 
     vp = vps2D[vpid]
 
-    new_lines_set = lines_set[:]
-    new_line_labels_set = line_labels_set[:]
-    new_clusters_set = clusters_set[:]
-    count = len(lines_set)
+    new_lines_set = []
+    new_line_labels_set = []
+    new_clusters_set = [[] for i in range(3)]
+    count = 0
 
     for plabel2 in pair_list2:
 
@@ -183,27 +183,27 @@ def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vp
         else:
             label2 = plabel2 * 10 + gc_def['frontal_wallID']
 
-        lineID_set1 = new_line_labels_set[new_line_labels_set[:, 1] == label1, 0]
-        lineID_set2 = new_line_labels_set[new_line_labels_set[:, 1] == label2, 0]
+        lineID_set1 = line_labels_set[line_labels_set[:, 1] == label1, 0]
+        lineID_set2 = line_labels_set[line_labels_set[:, 1] == label2, 0]
 
         for id1 in lineID_set1:
             for id2 in lineID_set2:
                 # search the vp corresponding to the corner
-                vpid1 = [id1 in cluster for cluster in new_clusters_set].index(True)
-                vpid2 = [id2 in cluster for cluster in new_clusters_set].index(True)
+                vpid1 = [id1 in cluster for cluster in clusters_set].index(True)
+                vpid2 = [id2 in cluster for cluster in clusters_set].index(True)
 
                 if vpid1 != table_gclabel_vp[table_gclabel_vp[:, 0] == label1, 1][0]:
                     continue
                 if vpid2 != table_gclabel_vp[table_gclabel_vp[:, 0] == label2, 1][0]:
                     continue
 
-                p1 = np.array([new_lines_set[id1][0], new_lines_set[id1][1], 1.0])
-                p2 = np.array([new_lines_set[id1][2], new_lines_set[id1][3], 1.0])
+                p1 = np.array([lines_set[id1][0], lines_set[id1][1], 1.0])
+                p2 = np.array([lines_set[id1][2], lines_set[id1][3], 1.0])
                 # line coefficient via p1 and p2
                 line1 = np.cross(p1, p2)
 
-                p1 = np.array([new_lines_set[id2][0], new_lines_set[id2][1], 1.0])
-                p2 = np.array([new_lines_set[id2][2], new_lines_set[id2][3], 1.0])
+                p1 = np.array([lines_set[id2][0], lines_set[id2][1], 1.0])
+                p2 = np.array([lines_set[id2][2], lines_set[id2][3], 1.0])
                 line2 = np.cross(p1, p2)
 
                 corner = np.cross(line1, line2)
@@ -224,11 +224,13 @@ def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vp
 
                 new_lines_set.append(newline)
 
-                new_line_labels_set = np.append(new_line_labels_set, [[count, label_to_gen]], axis=0)
+                new_line_labels_set.append([count, label_to_gen])
 
                 new_clusters_set[vpid].append(count)
 
                 count += 1
+
+    new_line_labels_set = np.array(new_line_labels_set)
 
     return new_lines_set, new_line_labels_set, new_clusters_set
 
@@ -240,14 +242,42 @@ def infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, tabl
     pair_list1 = np.intersect1d(labels_to_gen, [gc_def['left_wallID'], gc_def['right_wallID']])
     pair_list2 = np.intersect1d(labels_to_gen, [gc_def['floor_ID'], gc_def['ceiling_ID']])
 
+    new_lines_set = []
+    new_line_labels_set = []
+    new_clusters_set = [[] for i in range(3)]
+
     for label in labels_to_gen:
 
         if label in pair_list1:
-            lines_set, line_labels_set, clusters_set = infer_line(label, pair_list2, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp, im_width, mask_map)
+            lines, line_labels, clusters = infer_line(label, pair_list2, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp, im_width, mask_map)
         else:
-            lines_set, line_labels_set, clusters_set = infer_line(label, pair_list1, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp, im_width, mask_map)
+            lines, line_labels, clusters = infer_line(label, pair_list1, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp, im_width, mask_map)
 
-    return lines_set, line_labels_set, clusters_set
+        new_lines_set, new_line_labels_set, new_clusters_set = unify(lines, line_labels, clusters, new_lines_set, new_line_labels_set, new_clusters_set)
+
+    new_lines_set, new_line_labels_set, new_clusters_set = unify(new_lines_set, new_line_labels_set, new_clusters_set, lines_set,
+                                                                 line_labels_set, clusters_set)
+
+    return new_lines_set, new_line_labels_set, new_clusters_set
+
+def unify(lines, line_labels, clusters, new_lines_set, new_line_labels_set, new_clusters_set):
+
+    count = len(new_lines_set)
+
+    line_labels[:, 0] = line_labels[:, 0] + count
+
+    new_lines_set = new_lines_set + lines
+
+    if len(new_line_labels_set):
+        new_line_labels_set = np.append(new_line_labels_set, line_labels, axis=0)
+    else:
+        new_line_labels_set = line_labels
+
+    for cluster_id in range(len(clusters)):
+        new_clusters_set[cluster_id] = new_clusters_set[cluster_id] + [line_id + count for line_id in clusters[cluster_id]]
+
+    return new_lines_set, new_line_labels_set, new_clusters_set
+
 
 def resort_lines(lines, line_labels, clusters, table_gclabel_vp):
 
@@ -304,7 +334,7 @@ def gen_lineproposals(lines, vps2D, gc_map, clusters, line_labels, mask_map, ifi
         lines_set, line_labels_set, clusters_set = infer_lines(lines_set, line_labels_set, clusters_set,
                                                                            vps2D, gc_labels, table_gclabel_vp, mask_map)
     # combine to lines set
-    new_lines_set, new_line_labels_set, new_clusters_set = comb_to_set(lines_gc, line_gc_labels, line_gc_clusters, lines_set, line_labels_set, clusters_set, gc_labels, table_gclabel_vp)
+    new_lines_set, new_line_labels_set, new_clusters_set = comb_to_set(lines_gc, line_gc_labels, lines_set, line_labels_set, clusters_set, gc_labels, table_gclabel_vp)
 
     return  new_lines_set, new_line_labels_set, new_clusters_set, table_gclabel_vp
 
