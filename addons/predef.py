@@ -25,4 +25,33 @@ gc_def['right_wallID'] = 4
 gc_def['floor_ID'] = 5
 gc_def['ceiling_ID'] = 6
 
-gc_neighbours = [[2, 3], [2, 4], [2, 5], [2, 6], [3, 5], [3, 6], [4, 5], [4, 6]]
+gc_neighbours = [[gc_def['frontal_wallID'], gc_def['left_wallID']],
+                 [gc_def['frontal_wallID'], gc_def['right_wallID']],
+                 [gc_def['frontal_wallID'], gc_def['floor_ID']],
+                 [gc_def['frontal_wallID'], gc_def['ceiling_ID']],
+                 [gc_def['left_wallID'], gc_def['floor_ID']],
+                 [gc_def['left_wallID'], gc_def['ceiling_ID']],
+                 [gc_def['right_wallID'], gc_def['floor_ID']],
+                 [gc_def['right_wallID'], gc_def['ceiling_ID']]]
+
+neighbour_clusters = [[[gc_def['frontal_wallID'], gc_def['left_wallID']],
+                       [gc_def['frontal_wallID'], gc_def['right_wallID']]],
+                      [[gc_def['frontal_wallID'], gc_def['floor_ID']],
+                       [gc_def['frontal_wallID'], gc_def['ceiling_ID']]],
+                      [[gc_def['left_wallID'], gc_def['floor_ID']],
+                       [gc_def['left_wallID'], gc_def['ceiling_ID'] ],
+                       [gc_def['right_wallID'], gc_def['floor_ID']],
+                       [gc_def['right_wallID'], gc_def['ceiling_ID']]]]
+
+neighbour_cluster_set = []
+
+for cluster in neighbour_clusters:
+    cluster_set = []
+    for plabel1, plabel2 in cluster:
+        if plabel1 < plabel2:
+            label = plabel1 * 10 + plabel2
+        else:
+            label = plabel2 * 10 + plabel1
+        cluster_set.append(label)
+    neighbour_cluster_set.append(cluster_set)
+

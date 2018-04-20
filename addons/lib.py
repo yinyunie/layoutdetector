@@ -3,7 +3,7 @@ from pyflann import *
 import sys
 sys.path.append('/home/ynie1/Library/liblinear-2.20/python')
 from liblinearutil import *
-from addons.predef import gc_def, gc_neighbours
+from addons.predef import gc_def, gc_neighbours, neighbour_cluster_set
 
 def gen_line_fromGC(gc_map, gc_label1, gc_label2):
 
@@ -35,49 +35,39 @@ def gen_line_fromGC(gc_map, gc_label1, gc_label2):
 
     return [x1, y1, x2, y2]
 
-def gen_line_clusters(vps2D, lines):
+def gen_line_clusters(gc_labels, cnt, vps2D, lines, line_gc_labels):
     # decide which vps this line belongs to
     line_clusters = [[] for i in range(3)]
+    vps2D = np.array(vps2D)
 
-    for i in range(len(lines)):
+    vps_ids = range(3)
+    vps_imcnt = vps2D - cnt
 
-        x1 = lines[i][0]
-        y1 = lines[i][1]
-        x2 = lines[i][2]
-        y2 = lines[i][3]
+    vp_cid1 = np.argmax(np.abs(vps_imcnt[:, 1]))
 
-        pt1 = np.array([x1, y1])
-        pt2 = np.array([x2, y2])
-        ptm = (pt1 + pt2) / 2.
+    vps_ids = np.setdiff1d(vps_ids, vp_cid1)
+    vps_imcnt = vps_imcnt[vps_ids]
 
-        vc = (pt1 - pt2) / (np.linalg.norm(pt1 - pt2))
+    if gc_def['right_wallID'] in gc_labels:
+        vp_cid2 = vps_ids[np.argmin(np.linalg.norm(vps_imcnt, axis=1))]
+    else:
+        vp_cid2 = vps_ids[np.argmax(vps_imcnt[:,0])]
 
-        minAngle = 1000.
-        bestIdx = None
+    vp_cid3 = np.setdiff1d(range(3), [vp_cid1, vp_cid2])[0]
 
-        for j in range(3):
-            vp2d_c = vps2D[j] - ptm
-            vp2d_c = vp2d_c / np.linalg.norm(vp2d_c)
-
-            dotValue = np.dot(vp2d_c, vc)
-
-            if dotValue > 1.0:
-                dotValue = 1.0
-            if dotValue < -1.0:
-                dotValue = -1.0
-
-            angle = np.arccos(dotValue)
-            angle = min(np.pi - angle, angle)
-
-            if angle < minAngle:
-                minAngle = angle
-                bestIdx = j
-
-        line_clusters[bestIdx].append(i)
+    for line_id, gc_label in line_gc_labels:
+        if gc_label in neighbour_cluster_set[0]:
+            line_clusters[vp_cid1].append(line_id)
+        if gc_label in neighbour_cluster_set[2]:
+            line_clusters[vp_cid2].append(line_id)
+        if gc_label in neighbour_cluster_set[1]:
+            line_clusters[vp_cid3].append(line_id)
 
     return line_clusters
 
 def gen_lines_fromGC(gc_map, vps2D, ifscaleimg):
+
+    cnt = np.array([gc_map.shape[1], gc_map.shape[0]])/2.
 
     if ifscaleimg:
         # downsampling for efficiency, comment it if not use
@@ -112,9 +102,9 @@ def gen_lines_fromGC(gc_map, vps2D, ifscaleimg):
             line_gc_labels.append([line_count, label])
             line_count += 1
 
-    line_gc_clusters = gen_line_clusters(vps2D, lines_gc)
-
     line_gc_labels = np.array(line_gc_labels)
+
+    line_gc_clusters = gen_line_clusters(gc_labels, cnt, vps2D, lines_gc, line_gc_labels)
 
     return lines_gc, line_gc_labels, line_gc_clusters
 
@@ -376,11 +366,14 @@ def gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel
     for comb_id in xrange(len(line_combs)):
 
         new_lines = []
-        endpt_dict = {}
+        cornerpt_dict = {}
+
+        # initialisation
+        for plabel in line_combs[comb_id]:
+            cornerpt_dict[plabel] = []
 
         for plabel1 in label_set1:
             line1_id = line_combs[comb_id][plabels.index(plabel1)]
-            endpt_dict[line1_id] = []
 
             p1 = np.array([lines_set[line1_id][0], lines_set[line1_id][1], 1.0])
             p2 = np.array([lines_set[line1_id][2], lines_set[line1_id][3], 1.0])
@@ -388,7 +381,6 @@ def gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel
 
             for plabel2 in label_set2:
                 line2_id = line_combs[comb_id][plabels.index(plabel2)]
-                endpt_dict[line2_id] = []
 
                 p1 = np.array([lines_set[line2_id][0], lines_set[line2_id][1], 1.0])
                 p2 = np.array([lines_set[line2_id][2], lines_set[line2_id][3], 1.0])
@@ -405,13 +397,13 @@ def gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel
                 endpt = corner[:2] + lamb * (corner[:2] - vp2D)
                 newline = [endpt[0], endpt[1], corner[0], corner[1]]
 
-                endpt_dict[line1_id].append(corner[:2])
-                endpt_dict[line2_id].append(corner[:2])
+                cornerpt_dict[line1_id].append(corner[:2])
+                cornerpt_dict[line2_id].append(corner[:2])
 
                 new_lines.append(newline)
 
         for line_id in line_combs[comb_id]:
-            corners = endpt_dict[line_id]
+            corners = cornerpt_dict[line_id]
 
             if len(corners) > 1:
                 new_lines.append([coor for pnt in corners for coor in pnt])
@@ -479,15 +471,17 @@ def processGC(gc_map):
     # restric gc_map to limited cases
     gc_map_new = np.copy(gc_map)
     gc_labels = np.unique(gc_map)
-    if 2 not in gc_labels:
-        if 4 in gc_labels:
-            gc_map_new[gc_map==4] = 2
+    if gc_def['frontal_wallID'] not in gc_labels:
+        if gc_def['right_wallID'] in gc_labels:
+            gc_map_new[gc_map==gc_def['right_wallID']] = gc_def['frontal_wallID']
             return gc_map_new
-        elif 3 in gc_labels:
-            gc_map_new[gc_map == 3] = 2
+        elif gc_def['left_wallID'] in gc_labels:
+            gc_map_new[gc_map == gc_def['left_wallID']] = gc_def['frontal_wallID']
             return  gc_map_new
         else:
             return None
+    else:
+        return gc_map_new
 
 def reshape_map(map, height):
     # downsampling for efficiency
@@ -580,7 +574,7 @@ def line_filter(lines, clusters, mask):
             pt1 = np.array([lines[line_id][0], lines[line_id][1]])
             pt2 = np.array([lines[line_id][2], lines[line_id][3]])
 
-            pnts = np.array(pnts_gen(pt1, pt2, num_checks), dtype=np.uint)
+            pnts = np.uint(np.round(pnts_gen(pt1, pt2, num_checks)))
 
             ifpick = 1
             for pnt in pnts:

@@ -163,7 +163,7 @@ def calibrate(image, mode = 0, ifplot = 1):
 
     # decide camera intrinsic parameters
     if mode == 0:
-        K = [[f, 0., pp[0]], [0., f, pp[1]], [0., 0., 1.]]
+        K = np.array([[f, 0., pp[0]], [0., f, pp[1]], [0., 0., 1.]])
     elif mode == 1:
         ifweighted = False
         K = getCameraParas(lines, clusters, ifweighted)
