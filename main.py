@@ -42,6 +42,7 @@ if __name__ == '__main__':
         print 'Cannot open the layout file, please verify the address.'
 
     # get the binary mask from the edge map with the threshold and dilation step.
+    # A higher threshold will largely improve the entire efficiency.
     mask_map = get_mask(edge_map, 0.1, 4)
 
     # use mask_map to filter out wrong line members
@@ -69,14 +70,19 @@ if __name__ == '__main__':
     # If check the ifinferExtralines, extra lines will be inferred from the existing inferred lines.
     ifinferLines = True
     ifinferExtralines = True
-    lines_set, line_labels_set, clusters_set, table_gclabel_vp = gen_lineproposals(lines, vps2D, gc_map, new_clusters, line_labels, mask_map, ifinferLines, ifinferExtralines)
+    lines_set, line_labels_set, clusters_set, table_gclabel_vp = gen_lineproposals(lines, vps2D, gc_map, new_clusters,
+                                                                                   line_labels, mask_map, ifinferLines,
+                                                                                   ifinferExtralines)
     camera.drawClusters(image, lines_set, clusters_set, 'vps')
 
     # generate layout proposals
     gc_labels = np.unique(gc_map)
 
-    # to embed layout scoring function
-    proposals, score_list = gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_vp, vps2D, gc_labels, edge_map)
+    # Generate layout proposals from these line proposals.
+    # A layout proposal is generated from line proposals with four different gc_labels (frontal-left wall,
+    # frontal-right wall, frontal wall-ceiling and frontal wall-floor) with a vp.
+    proposals, score_list = gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_vp, vps2D,
+                                                gc_labels, edge_map)
 
     camera.draw_proposals(image, [proposals[i] for i in np.random.randint(0, len(proposals), 10)])
 

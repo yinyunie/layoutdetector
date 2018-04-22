@@ -354,14 +354,22 @@ def resort_lines(lines, line_labels, clusters, table_gclabel_vp):
     return lines_set, line_labels_set, clusters_set
 
 def gen_lineproposals(lines, vps2D, gc_map, clusters, line_labels, mask_map, ifinferLines, ifinferExtralines):
+    # To generate line proposals from the masked lines on the edge map. The generated lines are with four gc labels on the
+    # frontal wall
 
+    # give the gc label list of the gc map
     gc_labels = np.unique(gc_map)
 
-    # generate lines from gc content
-    ifscaleimg = True
+    # generate lines (line_gc) located between gc content pixels. e.g. For the line located between gc area frontal wall
+    # (2) and left wall(3). The following function will get the line along with its gc label (line_gc_labels)(23).
+    # line_gc_clusters: This a very important output, which gives the corresponding relationship between gc_label of lines
+    # and the vanishing points.
+
+    ifscaleimg = True # If scale the image for speed up efficiency
     lines_gc, line_gc_labels, line_gc_clusters = gen_lines_fromGC(gc_map, vps2D, ifscaleimg)
 
     # correspond gc_label to vanishing point id
+    # build a lookup table about the corresponding vp id of each gc_label of line
     table_gclabel_vp = []
     for line_id, label in line_gc_labels:
         vpid = [line_id in cluster for cluster in line_gc_clusters].index(True)
@@ -369,14 +377,21 @@ def gen_lineproposals(lines, vps2D, gc_map, clusters, line_labels, mask_map, ifi
 
     table_gclabel_vp = np.array(table_gclabel_vp)
 
+    # a line with some gc label should also be consistent with
+    # its vanishing point. For example, if a line is labeled as 23, it also should correspond to the same
+    # vp with 23 (from the lookup table table_gclabel_vp),
+    # otherwise, this line should be filtered out, as it can not be used in inferring new lines.
+
+    # In resort_lines(), wrong lines are filtered out and the selected lines are numbered from 0.
     lines_set, line_labels_set, clusters_set = resort_lines(lines, line_labels, clusters, table_gclabel_vp)
 
+    # Infer more lines from the filtered line segments.
     if ifinferLines:
-        # generate lines from inference
+
         lines_set, line_labels_set, clusters_set = infer_lines(lines_set, line_labels_set, clusters_set, vps2D,
                                                                gc_labels, table_gclabel_vp, mask_map,
                                                                ifinferExtralines)
-    # combine to lines set
+    # combine to the inferred line set with the original line set
     new_lines_set, new_line_labels_set, new_clusters_set = comb_to_set(lines_gc, line_gc_labels, lines_set, line_labels_set, clusters_set, gc_labels, table_gclabel_vp)
 
     return  new_lines_set, new_line_labels_set, new_clusters_set, table_gclabel_vp
@@ -424,9 +439,18 @@ def get_score(lines, edge_map):
 
 
 def gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel, edge_map):
+    # lines_set: stores all line proposals.
+    # clusters_set: stores the relations between line id and its corresponding vp id.
+    # vps2D: vanishing points on 2D image.
+    # vp2D: the vp that do nothing with the forming the frontal wall.
+    # plabels: the four labels located around the frontal wall
+    # lineIDs_gclabel: each subset contains line ids with the same gc label.
+    # edge_map: the probability map of the room layout.
 
     __, width = edge_map.shape
 
+    # left wall and right wall are parallel to each other in general, so as to the floor and the ceiling.
+    # left wall(or right wall) must intersect with the floor and the ceiling, hence we divide the two sets as the following.
     label_set1 = np.intersect1d(plabels, [gc_def['left_wallID'], gc_def['right_wallID']])
     label_set2 = np.intersect1d(plabels, [gc_def['floor_ID'], gc_def['ceiling_ID']])
 
@@ -504,6 +528,7 @@ def gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel
 
                 new_lines.append([endpnt[0], endpnt[1], corner[0], corner[1]])
 
+        # get the score of each proposal.
         layout_score = get_score(new_lines, edge_map)
 
         score_list.append(layout_score)
@@ -515,6 +540,13 @@ def gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel
     return proposals, score_list
 
 def gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_vp, vps2D, gc_labels, edge_map):
+    # line_set: all line proposals.
+    # line_labels_set: gc_labels correspond with lines in the line_set.
+    # clusters_set: stores the relationships between the line_id and its corresponding vp_id.
+    # table_gclabel_vp: stores the relations between gc_label of lines and the vp_id
+    # vps2D: vp on 2D image.
+    # gc_labels: existing gc content label of this case.
+    # edge_map: the score map of the room layout.
 
     # find out the third vp
     for gc_label, vp_id in table_gclabel_vp:
@@ -522,8 +554,12 @@ def gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_
             vp2D = vps2D[vp_id]
             break
 
+    # the four labels are located around the frontal wall, hence their gc label of area should not contain the frontal
+    # wall and background.
     plabels = list(np.setdiff1d(gc_labels, [gc_def['backgroundID'], gc_def['frontal_wallID']]))
 
+    # found not the line ids who are located around the frontal wall.
+    # In lineIDs_gclabel, line ids in whose subset have the same gc_label of line.
     lineIDs_gclabel = []
 
     for plabel in plabels:
@@ -535,6 +571,7 @@ def gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_
 
         lineIDs_gclabel.append(line_labels_set[line_labels_set[:,1] == label, 0])
 
+    # generate layout proposals with lines in lineIDs_gclabel, and give their fitting score on the edge_map.
     proposals, score_list = gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel, edge_map)
 
     return proposals, score_list
@@ -574,7 +611,7 @@ def reshape_map(map, height):
     return map_new
 
 def decide_linelabel(lines, clusters, gc_map):
-    # In this part, we define the gc_label for each line (generally in pair form)
+    # In this part, we define the gc label for each line (generally in pair form)
     # e.g. If the a line is located between the frontal wall (2) and the left wall (3),
     # then the label for this line is 23.
     # While, in the following process, a line with some label should also be consistent with
