@@ -1,4 +1,4 @@
-'''GC map definition:
+'''General GC map definition:
 # 1. background.
 # 2. frontal wall
 # 3. left wall

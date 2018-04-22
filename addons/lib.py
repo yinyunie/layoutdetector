@@ -7,6 +7,8 @@ from liblinearutil import *
 from addons.predef import gc_def, gc_neighbours, neighbour_cluster_set
 
 def get_mask(edge_map, threshold, dilate_size):
+    # Binarise the edge map with the threhold value
+    # Then dialte the result with dilate_size pixels.
 
     mask_map = (edge_map - np.min(edge_map))/(np.max(edge_map) - np.min(edge_map))
 
@@ -248,7 +250,7 @@ def infer_line(plabel1, pair_list2, lines_set, line_labels_set, clusters_set, vp
 
     return new_lines_set, new_line_labels_set, new_clusters_set
 
-def infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, table_gclabel_vp, mask_map):
+def infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, table_gclabel_vp, mask_map, ifinferExtralines):
 
     __, im_width = mask_map.shape
 
@@ -256,22 +258,47 @@ def infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, tabl
     pair_list1 = np.intersect1d(labels_to_gen, [gc_def['left_wallID'], gc_def['right_wallID']])
     pair_list2 = np.intersect1d(labels_to_gen, [gc_def['floor_ID'], gc_def['ceiling_ID']])
 
-    new_lines_set = []
-    new_line_labels_set = []
-    new_clusters_set = [[] for i in range(3)]
+    if not ifinferExtralines:
 
-    for label in labels_to_gen:
+        new_lines_set = []
+        new_line_labels_set = []
+        new_clusters_set = [[] for i in range(3)]
 
-        if label in pair_list1:
-            lines, line_labels, clusters = infer_line(label, pair_list2, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp, im_width, mask_map)
-        else:
-            lines, line_labels, clusters = infer_line(label, pair_list1, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp, im_width, mask_map)
+        for label in labels_to_gen:
 
-        if lines:
-            new_lines_set, new_line_labels_set, new_clusters_set = unify(lines, line_labels, clusters, new_lines_set, new_line_labels_set, new_clusters_set)
+            if label in pair_list1:
+                lines, line_labels, clusters = infer_line(label, pair_list2, lines_set, line_labels_set, clusters_set,
+                                                          vps2D, table_gclabel_vp, im_width, mask_map)
+            else:
+                lines, line_labels, clusters = infer_line(label, pair_list1, lines_set, line_labels_set, clusters_set,
+                                                          vps2D, table_gclabel_vp, im_width, mask_map)
 
-    new_lines_set, new_line_labels_set, new_clusters_set = unify(new_lines_set, new_line_labels_set, new_clusters_set, lines_set,
-                                                                 line_labels_set, clusters_set)
+            if lines:
+                new_lines_set, new_line_labels_set, new_clusters_set = unify(lines, line_labels, clusters,
+                                                                             new_lines_set, new_line_labels_set,
+                                                                             new_clusters_set)
+
+        new_lines_set, new_line_labels_set, new_clusters_set = unify(new_lines_set, new_line_labels_set,
+                                                                     new_clusters_set, lines_set, line_labels_set,
+                                                                     clusters_set)
+    else:
+
+        new_lines_set = lines_set[:]
+        new_line_labels_set = line_labels_set[:]
+        new_clusters_set = clusters_set[:]
+
+        for label in labels_to_gen:
+
+            if label in pair_list1:
+                lines, line_labels, clusters = infer_line(label, pair_list2, new_lines_set, new_line_labels_set,
+                                                          new_clusters_set, vps2D, table_gclabel_vp, im_width, mask_map)
+            else:
+                lines, line_labels, clusters = infer_line(label, pair_list1, new_lines_set, new_line_labels_set,
+                                                          new_clusters_set, vps2D, table_gclabel_vp, im_width, mask_map)
+            if lines:
+                new_lines_set, new_line_labels_set, new_clusters_set = unify(lines, line_labels, clusters,
+                                                                             new_lines_set, new_line_labels_set,
+                                                                             new_clusters_set)
 
     return new_lines_set, new_line_labels_set, new_clusters_set
 
@@ -326,7 +353,7 @@ def resort_lines(lines, line_labels, clusters, table_gclabel_vp):
 
     return lines_set, line_labels_set, clusters_set
 
-def gen_lineproposals(lines, vps2D, gc_map, clusters, line_labels, mask_map, ifinferLines):
+def gen_lineproposals(lines, vps2D, gc_map, clusters, line_labels, mask_map, ifinferLines, ifinferExtralines):
 
     gc_labels = np.unique(gc_map)
 
@@ -346,8 +373,9 @@ def gen_lineproposals(lines, vps2D, gc_map, clusters, line_labels, mask_map, ifi
 
     if ifinferLines:
         # generate lines from inference
-        lines_set, line_labels_set, clusters_set = infer_lines(lines_set, line_labels_set, clusters_set,
-                                                                           vps2D, gc_labels, table_gclabel_vp, mask_map)
+        lines_set, line_labels_set, clusters_set = infer_lines(lines_set, line_labels_set, clusters_set, vps2D,
+                                                               gc_labels, table_gclabel_vp, mask_map,
+                                                               ifinferExtralines)
     # combine to lines set
     new_lines_set, new_line_labels_set, new_clusters_set = comb_to_set(lines_gc, line_gc_labels, lines_set, line_labels_set, clusters_set, gc_labels, table_gclabel_vp)
 
@@ -546,23 +574,13 @@ def reshape_map(map, height):
     return map_new
 
 def decide_linelabel(lines, clusters, gc_map):
-    '''GC map definition:
-    # 1. background.
-    # 2. frontal wall
-    # 3. left wall
-    # 4. right wall
-    # 5. floor
-    # 6. ceiling'''
-    '''Output definition:
-    linelabels: (9 in total)
-    '23': between frontal wall (2) and left wall (3)
-    '24': between frontal wall (2) and right wall (4)
-    '25': between frontal wall (2) and floor (5)
-    '26': between frontal wall (2) and ceiling (6)
-    '35': between left wall (2) and floor (5)
-    '36': between left wall (2) and ceiling (6)
-    '45': between right wall (2) and floor (5)
-    '46': between right wall (2) and ceiling (6)'''
+    # In this part, we define the gc_label for each line (generally in pair form)
+    # e.g. If the a line is located between the frontal wall (2) and the left wall (3),
+    # then the label for this line is 23.
+    # While, in the following process, a line with some label should also be consistent with
+    # its vanishing point. For example, if a line is labeled as 23, it also should correspond to the same
+    # vp with 23, otherwise, this line should be filtered out, as it can not be used in inferring new lines.
+
     # downsampling for efficiency
     height = 100
     size0 = gc_map.shape[0]
@@ -575,6 +593,7 @@ def decide_linelabel(lines, clusters, gc_map):
     for label in gc_labels:
         dataset.append(np.double(np.argwhere(gc_map == label)))
 
+    # here, we used nearest neighbour method to judge its label.
     flann = FLANN()
     linelabels = []
 
@@ -611,6 +630,10 @@ def pnts_gen(pt1, pt2, num_checks):
     return pts
 
 def line_filter(lines, clusters, mask):
+    # Judge whether these lines are located in the mask == 1 area.
+
+    # We use num_checks to uniformly sample points on lines to conduct the judgement.
+
     num_checks = 4
     new_clusters = [[] for i in range(len(clusters))]
 

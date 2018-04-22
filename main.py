@@ -42,24 +42,13 @@ if __name__ == '__main__':
         print 'Cannot open the layout file, please verify the address.'
 
     # get the binary mask from the edge map with the threshold and dilation step.
-
     mask_map = get_mask(edge_map, 0.1, 4)
 
     # use mask_map to filter out wrong line members
     new_clusters = line_filter(lines, clusters, mask_map)
 
     # draw filtered lines
-    image1 = np.copy(image)
-    camera.drawClusters(image1, lines, new_clusters, 'vps')
-    cv2.imshow('', image1)
-    cv2.waitKey(0)
-
-    # next to generate line candidates
-    # 1. define the role of each line (between front wall and floor, e.t.c.)
-    # 2. using vanishing point to extend lines to ensure each corner point
-    # 3. use each corner to generate occluded lines or undetected lines.
-    # 4. use vanishing point to generate random lines within mask area.
-    # 5. generate proposals
+    camera.drawClusters(image, lines, new_clusters, 'vps')
 
     # read geometric content of the image
     try:
@@ -68,22 +57,20 @@ if __name__ == '__main__':
     except IOError:
         print 'Cannot open the gc file, please verify the address.'
 
-    # 1. define the role of each line (between front wall and floor, e.t.c.)
-    # Definition: eight classes of lines are defined, but only four are used
+    # define the role of each line (between front wall and floor, e.t.c.)
+    # definition: eight classes of lines are defined, but only four are used
     line_labels = decide_linelabel(lines, new_clusters, gc_map)
 
-    image1 = np.copy(image)
-    camera.drawClusters(image1, lines, new_clusters, 'gc', line_labels)
-    cv2.imshow('', image1)
-    cv2.waitKey(0)
+    camera.drawClusters(image, lines, new_clusters, 'gc', line_labels)
 
-    # generate line proposals
+    # to generate line proposals for geometric-content(gc) labels placed around the frontal wall
+    # Hence, only four kinds (divided by gc label) of line proposals are generated.
+    # If check the ifinferLines tag, more line proposals will be inferred from the existing line segments
+    # If check the ifinferExtralines, extra lines will be inferred from the existing inferred lines.
     ifinferLines = True
-    lines_set, line_labels_set, clusters_set, table_gclabel_vp = gen_lineproposals(lines, vps2D, gc_map, new_clusters, line_labels, mask_map, ifinferLines)
-    image1 = np.copy(image)
-    camera.drawClusters(image1, lines_set, clusters_set, 'vps')
-    cv2.imshow('', image1)
-    cv2.waitKey(0)
+    ifinferExtralines = True
+    lines_set, line_labels_set, clusters_set, table_gclabel_vp = gen_lineproposals(lines, vps2D, gc_map, new_clusters, line_labels, mask_map, ifinferLines, ifinferExtralines)
+    camera.drawClusters(image, lines_set, clusters_set, 'vps')
 
     # generate layout proposals
     gc_labels = np.unique(gc_map)
@@ -91,14 +78,8 @@ if __name__ == '__main__':
     # to embed layout scoring function
     proposals, score_list = gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_vp, vps2D, gc_labels, edge_map)
 
-    image1 = np.copy(image)
-    camera.draw_proposals(image1, [proposals[i] for i in np.random.randint(0, len(proposals), 10)])
-    cv2.imshow('', image1)
-    cv2.waitKey(0)
+    camera.draw_proposals(image, [proposals[i] for i in np.random.randint(0, len(proposals), 10)])
 
-    image1 = np.copy(image)
-    camera.draw_proposals(image1, [proposals[score_list.index(max(score_list))]])
-    cv2.imshow('', image1)
-    cv2.waitKey(0)
+    camera.draw_proposals(image, [proposals[score_list.index(max(score_list))]])
 
     print 'Debug'

@@ -31,6 +31,7 @@ def LineDetect(image, thLength):
 
 def drawClusters(image, lines, clusters, colorPattern, linelabels = None):
 
+    image1 = np.copy(image)
     if colorPattern == 'vps':
         palette = [(255,0,0), (0,255,0), (0,0,255)]
     elif colorPattern == 'gc':
@@ -43,24 +44,28 @@ def drawClusters(image, lines, clusters, colorPattern, linelabels = None):
             pt1 = (np.int(lines[line_id][0]), np.int(lines[line_id][1]))
             pt2 = (np.int(lines[line_id][2]), np.int(lines[line_id][3]))
             if colorPattern == 'vps':
-                cv2.line(image, pt1, pt2, palette[colorID], 2)
+                cv2.line(image1, pt1, pt2, palette[colorID], 2)
             elif colorPattern == 'gc':
                 label = linelabels[linelabels[:,0]==line_id, 1]
                 cid = labellist.index(label)
-                cv2.line(image, pt1, pt2, palette[cid,:], 5)
+                cv2.line(image1, pt1, pt2, palette[cid,:], 5)
 
         colorID += 1
 
-    return image
+    cv2.imshow('', image1)
+    cv2.waitKey(0)
 
 def drawBox(image, vps, f, pp):
+
+    image1 = np.copy(image)
+
     vps2D = [[] for i in xrange(3)]
     for i in xrange(3):
         vps2D[i] = np.array([vps[i][0] * f / vps[i][2] + pp[0], vps[i][1] * f / vps[i][2] + pp[1]])
 
     space = 20
-    width = image.shape[1]
-    height = image.shape[0]
+    width = image1.shape[1]
+    height = image1.shape[0]
 
     upline = np.array([[i, 0] for i in range(0, width, space)])
     bottomline = np.array([[i, height - 1] for i in range(0, width, space)])
@@ -73,12 +78,15 @@ def drawBox(image, vps, f, pp):
         pt1 = points[i][0], points[i][1]
         for k in xrange(3):
             pt2 = (np.int(vps2D[k][0]), np.int(vps2D[k][1]))
-            cv2.line(image, pt1, pt2, palatte[k], 1)
+            cv2.line(image1, pt1, pt2, palatte[k], 1)
 
-    return image
+    cv2.imshow('', image1)
+    cv2.waitKey(0)
 
 
 def draw_proposals(image, proposals):
+    image1 = np.copy(image)
+
     num_propals = len(proposals)
     palette = np.random.randint(0, 256, size=[num_propals, 3])
     count = 0
@@ -87,11 +95,12 @@ def draw_proposals(image, proposals):
         for line in proposal:
             pt1 = (np.int(line[0]), np.int(line[1]))
             pt2 = (np.int(line[2]), np.int(line[3]))
-            cv2.line(image, pt1, pt2, palette[count, :], 5)
+            cv2.line(image1, pt1, pt2, palette[count, :], 5)
 
         count = count + 1
 
-    return image
+    cv2.imshow('', image1)
+    cv2.waitKey(0)
 
 def getCameraParas(lines, clusters, mode, ifweighted = False):
     vps2D = [[] for i in range(3)]
@@ -152,7 +161,7 @@ def getCameraParas(lines, clusters, mode, ifweighted = False):
 
     return K
 
-def calibrate(image, mode = 0, ifplot = 1):
+def calibrate(image, mode = 0, ifdraw = 1):
     # Line segment detection
     thLength = 30.0 # threshold of the length of line segments
 
@@ -181,16 +190,10 @@ def calibrate(image, mode = 0, ifplot = 1):
         vps, clusters = detector.run()
 
 
-    if ifplot:
-        image1 = np.copy(image)
-        drawClusters(image1, lines, clusters, 'vps')
-        cv2.imshow("", image1)
-        cv2.waitKey(0)
+    if ifdraw:
+        drawClusters(image, lines, clusters, 'vps')
 
-        image2 = np.copy(image)
-        drawBox(image2, vps, K[0][0], [K[0][2], K[1][2]])
-        cv2.imshow("", image2)
-        cv2.waitKey(0)
+        drawBox(image, vps, K[0][0], [K[0][2], K[1][2]])
 
     return K, vps, clusters, lines
 
