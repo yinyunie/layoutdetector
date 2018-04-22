@@ -1,9 +1,23 @@
 import numpy as np
 from pyflann import *
 import sys
+import cv2
 sys.path.append('/home/ynie1/Library/liblinear-2.20/python')
 from liblinearutil import *
 from addons.predef import gc_def, gc_neighbours, neighbour_cluster_set
+
+def get_mask(edge_map, threshold, dilate_size):
+
+    mask_map = (edge_map - np.min(edge_map))/(np.max(edge_map) - np.min(edge_map))
+
+    mask_map[mask_map < threshold] = 0.
+    mask_map[mask_map >= threshold] = 1.
+
+    kernel = np.ones((dilate_size, dilate_size), np.uint8)
+    mask_map = cv2.dilate(mask_map, kernel, iterations=1)
+    mask_map = np.uint8(mask_map)
+
+    return mask_map
 
 def gen_line_fromGC(gc_map, gc_label1, gc_label2):
 
@@ -253,7 +267,8 @@ def infer_lines(lines_set, line_labels_set, clusters_set, vps2D, gc_labels, tabl
         else:
             lines, line_labels, clusters = infer_line(label, pair_list1, lines_set, line_labels_set, clusters_set, vps2D, table_gclabel_vp, im_width, mask_map)
 
-        new_lines_set, new_line_labels_set, new_clusters_set = unify(lines, line_labels, clusters, new_lines_set, new_line_labels_set, new_clusters_set)
+        if lines:
+            new_lines_set, new_line_labels_set, new_clusters_set = unify(lines, line_labels, clusters, new_lines_set, new_line_labels_set, new_clusters_set)
 
     new_lines_set, new_line_labels_set, new_clusters_set = unify(new_lines_set, new_line_labels_set, new_clusters_set, lines_set,
                                                                  line_labels_set, clusters_set)
@@ -605,6 +620,7 @@ def line_filter(lines, clusters, mask):
             pt2 = np.array([lines[line_id][2], lines[line_id][3]])
 
             pnts = np.uint(np.round(pnts_gen(pt1, pt2, num_checks)))
+            # pnts = np.array(pnts_gen(pt1, pt2, num_checks), dtype=np.uint)
 
             ifpick = 1
             for pnt in pnts:

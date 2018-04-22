@@ -4,7 +4,7 @@ if __name__ == '__main__':
     from addons import camera
     import scipy.io as sio
     import numpy as np
-    from addons.lib import line_filter, decide_linelabel, processGC, gen_lineproposals, gen_layoutproposals
+    from addons.lib import line_filter, decide_linelabel, processGC, gen_lineproposals, gen_layoutproposals, get_mask
 
     parser = argparse.ArgumentParser(description="Layout prediction, vanishing point detection and camera orientation decision from "
                                                  "a single image.")
@@ -16,35 +16,34 @@ if __name__ == '__main__':
                         help="Give the address of geometric content of the image.")
     args = parser.parse_args()
 
-    # Read source image
+    # Read the source image
     try:
         image = cv2.imread(args.filename)
     except IOError:
         print 'Cannot open the image file, please verify the image address.'
 
-    # get Camera intrinsic matrix and vanishing points
+    # get Camera intrinsic matrix and vanishing points.
+    # mode = 1: estimate the vanishing points (vps) and vanishing directions using the estimated K.
+    #           focal length = 1.2*max(cols,rows) of the image.
+    # model = 2: use the LSE to re-estimate the camera parameters after the found vps.
+    # model = 3: use the eigen value decomposition solution to re-estimate the camera parameters after the found vps.
     mode = 2
     K, vps, clusters, lines = camera.calibrate(image, mode, 1)
 
-    # vps in 2D
+    # get the vps in 2D image plane.
     vps2D = [[] for i in range(3)]
     for i in xrange(3):
         vps2D[i] = np.array([vps[i][0] * K[0, 0] / vps[i][2] + K[0, 2], vps[i][1] * K[0, 0] / vps[i][2] + K[1, 2]])
 
-    # read coarse layout
+    # read the coarse layout file.
     try:
         edge_map = sio.loadmat(args.layout)['edge_prob_map']
     except IOError:
         print 'Cannot open the layout file, please verify the address.'
 
-    mask_map = (edge_map - np.min(edge_map))/(np.max(edge_map) - np.min(edge_map))
+    # get the binary mask from the edge map with the threshold and dilation step.
 
-    mask_map[mask_map < 0.05] = 0.
-    mask_map[mask_map >= 0.05] = 1.
-
-    kernel = np.ones((4, 4), np.uint8)
-    mask_map = cv2.dilate(mask_map, kernel, iterations=1)
-    mask_map = np.uint8(mask_map)
+    mask_map = get_mask(edge_map, 0.1, 4)
 
     # use mask_map to filter out wrong line members
     new_clusters = line_filter(lines, clusters, mask_map)

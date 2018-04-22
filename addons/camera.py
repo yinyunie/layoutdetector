@@ -162,7 +162,7 @@ def calibrate(image, mode = 0, ifplot = 1):
     # Camera internal parameters
     pp = image.shape[1]/2., image.shape[0]/2. # principle point (in pixel)
 
-    f = np.double(np.max(image.shape))# focal length (in pixel), a former guess
+    f = np.double(np.max(image.shape)) # focal length (in pixel), a former guess
 
     noiseRatio = 0.5
     # VPDetection class
