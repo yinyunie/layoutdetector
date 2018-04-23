@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 from vpdetector import VPDetection
 from pylsd.lsd import lsd
-import random
 
 def LineDetect(image, thLength):
     if image.shape[2] == 1:

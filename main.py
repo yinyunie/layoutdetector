@@ -5,6 +5,7 @@ if __name__ == '__main__':
     import scipy.io as sio
     import numpy as np
     from addons.lib import line_filter, decide_linelabel, processGC, gen_lineproposals, gen_layoutproposals, get_mask
+    import ntpath
 
     parser = argparse.ArgumentParser(description="Layout prediction, vanishing point detection and camera orientation decision from "
                                                  "a single image.")
@@ -16,6 +17,8 @@ if __name__ == '__main__':
                         help="Give the address of geometric content of the image.")
     args = parser.parse_args()
 
+    ifsave = True
+
     # Read the source image
     try:
         image = cv2.imread(args.filename)
@@ -25,8 +28,8 @@ if __name__ == '__main__':
     # get Camera intrinsic matrix and vanishing points.
     # mode = 1: estimate the vanishing points (vps) and vanishing directions using the estimated K.
     #           focal length = 1.2*max(cols,rows) of the image.
-    # model = 2: use the LSE to re-estimate the camera parameters after the found vps.
-    # model = 3: use the eigen value decomposition solution to re-estimate the camera parameters after the found vps.
+    # mode = 2: use the LSE to re-estimate the camera parameters after the found vps.
+    # mode = 3: use the eigen value decomposition solution to re-estimate the camera parameters after the found vps.
     mode = 2
     K, vps, clusters, lines = camera.calibrate(image, mode, 1)
 
@@ -87,5 +90,8 @@ if __name__ == '__main__':
     camera.draw_proposals(image, [proposals[i] for i in np.random.randint(0, len(proposals), 10)])
 
     camera.draw_proposals(image, [proposals[score_list.index(max(score_list))]])
+
+    if ifsave:
+        np.save('./results/' +ntpath.basename(args.filename).split('.')[0] + '_layout.npy', proposals[score_list.index(max(score_list))])
 
     print 'Debug'

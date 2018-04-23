@@ -4,7 +4,6 @@
     <list default="true" id="2304be38-c436-4f0f-9067-959d7450fecf" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/addons/camera.py" beforeDir="false" afterPath="$PROJECT_DIR$/addons/camera.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/addons/lib.py" beforeDir="false" afterPath="$PROJECT_DIR$/addons/lib.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -15,15 +14,15 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
-    <SUITE FILE_PATH="coverage/layoutdetector$main.coverage" NAME="main Coverage Results" MODIFIED="1524262302043" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/layoutdetector$main.coverage" NAME="main Coverage Results" MODIFIED="1524475712696" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="FileEditorManager">
-    <leaf SIDE_TABS_SIZE_LIMIT_KEY="375">
+    <leaf>
       <file leaf-file-name="main.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="126">
-              <caret line="31" column="36" selection-start-line="31" selection-start-column="36" selection-end-line="31" selection-end-column="36" />
+            <state relative-caret-position="368">
+              <caret line="90" lean-forward="true" selection-start-line="90" selection-end-line="90" />
             </state>
           </provider>
         </entry>
@@ -31,10 +30,22 @@
       <file leaf-file-name="lib.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/addons/lib.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="227">
-              <caret line="363" column="14" selection-start-line="363" selection-start-column="4" selection-end-line="363" selection-end-column="14" />
+            <state relative-caret-position="-2418">
+              <caret line="531" column="23" selection-start-line="531" selection-start-column="23" selection-end-line="531" selection-end-column="23" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="camera.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/addons/camera.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="62">
+              <caret line="162" column="4" selection-start-line="162" selection-start-column="4" selection-end-line="162" selection-end-column="4" />
+              <folding>
+                <element signature="e#0#10#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -51,15 +62,11 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>kwargs</find>
-      <find>vp2D</find>
-      <find>vps2D</find>
       <find>gen_line_clusters</find>
       <find>clusters_set</find>
       <find>fla</find>
       <find>pyflann</find>
       <find>nn</find>
-      <find>filter</find>
       <find>filter_lines</find>
       <find>100</find>
       <find>plabel</find>
@@ -69,12 +76,22 @@
       <find>[:]</find>
       <find>np.append</find>
       <find>pay</find>
-      <find>round</find>
       <find>int</find>
       <find>np.int</find>
       <find>Debug</find>
       <find>gc_neighbours</find>
       <find>ruleout</find>
+      <find>new_line_labels_set</find>
+      <find>comb</find>
+      <find>clusters[cluster_id]</find>
+      <find>axis</find>
+      <find>new_clusters_set</find>
+      <find>stack</find>
+      <find>gen_lineproposals</find>
+      <find>round</find>
+      <find>filter</find>
+      <find>drawClusters</find>
+      <find>four</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -87,8 +104,8 @@
         <option value="$PROJECT_DIR$/addons/vpdetector.py" />
         <option value="$PROJECT_DIR$/addons/predef.py" />
         <option value="$PROJECT_DIR$/addons/lib.py" />
-        <option value="$PROJECT_DIR$/main.py" />
         <option value="$PROJECT_DIR$/addons/camera.py" />
+        <option value="$PROJECT_DIR$/main.py" />
       </list>
     </option>
   </component>
@@ -99,9 +116,10 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="960" />
-    <option name="width" value="960" />
-    <option name="height" value="1032" />
+    <option name="x" value="1985" />
+    <option name="y" value="-4" />
+    <option name="width" value="1855" />
+    <option name="height" value="1084" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
@@ -116,11 +134,6 @@
               <item name="layoutdetector" type="b2602c69:ProjectViewProjectNode" />
               <item name="layoutdetector" type="462c0819:PsiDirectoryNode" />
             </path>
-            <path>
-              <item name="layoutdetector" type="b2602c69:ProjectViewProjectNode" />
-              <item name="layoutdetector" type="462c0819:PsiDirectoryNode" />
-              <item name="addons" type="462c0819:PsiDirectoryNode" />
-            </path>
           </expand>
           <select />
         </subPane>
@@ -129,7 +142,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/main.py" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../scenemodelling" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RunDashboard">
@@ -159,7 +172,7 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
-      <option name="PARAMETERS" value="-f ./imgs/case02.jpg -l ./coarselayouts/case02_edge_prob_map.mat -g ./gc/case02_GC_map.mat" />
+      <option name="PARAMETERS" value="-f ./imgs/case01.jpg -l ./coarselayouts/case01_edge_prob_map.mat -g ./gc/case01_GC_map.mat" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -179,7 +192,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="65" y="-4" width="1855" height="1084" extended-state="6" />
+    <frame x="1985" y="-4" width="1855" height="1084" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info anchor="bottom" id="TODO" order="6" />
@@ -189,7 +202,7 @@
       <window_info anchor="bottom" id="Version Control" order="7" />
       <window_info anchor="bottom" id="Python Console" order="7" weight="0.32948583" />
       <window_info anchor="bottom" id="Terminal" order="7" />
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.49619484" visible="true" weight="0.27529022" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.49619484" visible="true" weight="0.2819237" />
       <window_info anchor="bottom" id="Docker" order="8" show_stripe_button="false" />
       <window_info anchor="right" id="Database" order="3" />
       <window_info anchor="right" id="SciView" order="3" weight="0.32946378" />
@@ -217,96 +230,88 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/main.py</url>
-          <line>52</line>
-          <option name="timeStamp" value="313" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/main.py</url>
-          <line>82</line>
-          <option name="timeStamp" value="314" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/main.py</url>
-          <line>94</line>
-          <option name="timeStamp" value="315" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/main.py</url>
-          <line>92</line>
-          <option name="timeStamp" value="316" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/main.py</url>
-          <line>99</line>
-          <option name="timeStamp" value="318" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/main.py</url>
-          <line>104</line>
-          <option name="timeStamp" value="319" />
+          <line>96</line>
+          <option name="timeStamp" value="389" />
         </line-breakpoint>
       </breakpoints>
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="320" />
+      <option name="time" value="390" />
     </breakpoint-manager>
   </component>
   <component name="debuggerHistoryManager">
     <expressions id="evaluateCodeFragment">
       <expression>
-        <expression-string>line_combs.shape</expression-string>
+        <expression-string>'./results/' +ntpath.basename(args.filename).split('.')[0] + '.npy'</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>np.uint32(pt1)</expression-string>
+        <expression-string>ntpath.basename(args.filename).split('.')[0]+'.npy'</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>np.uint(pt1)</expression-string>
+        <expression-string>ntpath.basename(args.filename).split('.')[0]+'npy'</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>pt2</expression-string>
+        <expression-string>ntpath.basename(args.filename).split('.')[0]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>pt1</expression-string>
+        <expression-string>ntpath.basename(args.filename).split('.')</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>palette</expression-string>
+        <expression-string>ntpath.basename(args.filename)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>colorID</expression-string>
+        <expression-string>ntpath.split(args.filename)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>cv2.line(image, pt1, pt2, palette[colorID], 2)</expression-string>
+        <expression-string>import ntpath</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>pt_eigen</expression-string>
+        <expression-string>os.path.basename(args.filename)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>vps2D</expression-string>
+        <expression-string>import os</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
       </expression>
     </expressions>
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1890">
+          <caret line="105" lean-forward="true" selection-start-line="105" selection-end-line="105" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/addons/lib.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="7038">
+          <caret line="393" column="14" selection-start-line="393" selection-start-column="4" selection-end-line="393" selection-end-column="14" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1890">
@@ -585,44 +590,44 @@
         </state>
       </provider>
     </entry>
-    <entry file="file:///usr/lib/python2.7/dist-packages/numpy/linalg/linalg.py">
+    <entry file="file:///usr/lib/python2.7/dist-packages/numpy/lib/function_base.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="407">
-          <caret line="103" column="17" selection-start-line="103" selection-start-column="17" selection-end-line="103" selection-end-column="17" />
+        <state relative-caret-position="483">
+          <caret line="4574" selection-start-line="4574" selection-end-line="4574" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/addons/lib.py">
+    <entry file="file:///usr/lib/python2.7/dist-packages/numpy/linalg/linalg.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="227">
-          <caret line="363" column="14" selection-start-line="363" selection-start-column="4" selection-end-line="363" selection-end-column="14" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="281">
+          <caret line="92" selection-start-line="92" selection-end-line="92" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/addons/camera.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="254">
-          <caret line="104" column="30" selection-start-line="104" selection-start-column="30" selection-end-line="104" selection-end-column="30" />
+        <state relative-caret-position="62">
+          <caret line="162" column="4" selection-start-line="162" selection-start-column="4" selection-end-line="162" selection-end-column="4" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/addons/predef.py">
+    <entry file="file://$PROJECT_DIR$/addons/lib.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="494">
-          <caret line="57" lean-forward="true" selection-start-line="57" selection-end-line="57" />
+        <state relative-caret-position="-2418">
+          <caret line="531" column="23" selection-start-line="531" selection-start-column="23" selection-end-line="531" selection-end-column="23" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="126">
-          <caret line="31" column="36" selection-start-line="31" selection-start-column="36" selection-end-line="31" selection-end-column="36" />
+        <state relative-caret-position="368">
+          <caret line="90" lean-forward="true" selection-start-line="90" selection-end-line="90" />
         </state>
       </provider>
     </entry>
