@@ -101,7 +101,7 @@ def draw_proposals(image, proposals):
     cv2.imshow('', image1)
     cv2.waitKey(0)
 
-def getCameraParas(lines, clusters, mode, ifweighted = False):
+def getCameraParas(lines, clusters, pp, mode, ifweighted = False):
     vps2D = [[] for i in range(3)]
     count = 0
     for cluster in clusters:
@@ -128,7 +128,7 @@ def getCameraParas(lines, clusters, mode, ifweighted = False):
             else:
                 pt = np.linalg.inv(A.T.dot(A)).dot(A.T).dot(y)
 
-        elif mode == 2:
+        elif mode == 2 or mode == 3:
 
             # eigen value solution
             eigenValues, eigenVecs = np.linalg.eig(lineMatrix.T.dot(lineMatrix))
@@ -141,22 +141,36 @@ def getCameraParas(lines, clusters, mode, ifweighted = False):
         vps2D[count] = pt
         count = count + 1
 
-    CoefMatrix = np.zeros([3, 4])
-    count = 0
-    for i in range(3):
-        for j in range(i+1, 3):
-            CoefMatrix[count][0] = vps2D[i][0] * vps2D[j][0] + vps2D[i][1] * vps2D[j][1]
-            CoefMatrix[count][1] = vps2D[i][0] + vps2D[j][0]
-            CoefMatrix[count][2] = vps2D[i][1] + vps2D[j][1]
-            CoefMatrix[count][3] = 1.0
-            count = count + 1
-    eigenValues, eigenVecs = np.linalg.eig(CoefMatrix.T.dot(CoefMatrix))
+    if mode != 3:
 
-    paras = eigenVecs[:, np.argmin(eigenValues)]
+        CoefMatrix = np.zeros([3, 4])
+        count = 0
+        for i in range(3):
+            for j in range(i+1, 3):
+                CoefMatrix[count][0] = vps2D[i][0] * vps2D[j][0] + vps2D[i][1] * vps2D[j][1]
+                CoefMatrix[count][1] = vps2D[i][0] + vps2D[j][0]
+                CoefMatrix[count][2] = vps2D[i][1] + vps2D[j][1]
+                CoefMatrix[count][3] = 1.0
+                count = count + 1
+        eigenValues, eigenVecs = np.linalg.eig(CoefMatrix.T.dot(CoefMatrix))
 
-    SMatrix = np.array([[paras[0], 0., paras[1]], [0., paras[0], paras[2]], [paras[1], paras[2], paras[3]]])
-    K_temp = np.linalg.inv(np.linalg.cholesky(SMatrix).T)
-    K = K_temp / K_temp[2,2]
+        paras = eigenVecs[:, np.argmin(eigenValues)]
+
+        SMatrix = np.array([[paras[0], 0., paras[1]], [0., paras[0], paras[2]], [paras[1], paras[2], paras[3]]])
+        K_temp = np.linalg.inv(np.linalg.cholesky(SMatrix).T)
+        K = K_temp / K_temp[2,2]
+
+    else:
+        focal_lens = [[] for i in range(3)]
+        count = 0
+        for i in range(3):
+            for j in range(i + 1, 3):
+                focal_lens[count] = vps2D[i][0] * pp[0] + vps2D[j][0] * pp[0] + vps2D[i][1] * pp[1] + vps2D[j][1] * pp[
+                    1] - vps2D[i][0] * vps2D[j][0] - vps2D[i][1] * vps2D[j][1] - pp[0] ** 2 - pp[1] ** 2
+                count += 1
+
+        focal_len = np.mean(np.sqrt([focal_len for focal_len in focal_lens if focal_len > 0]))
+        K = np.array([[focal_len, 0., pp[0]], [0., focal_len, pp[1]], [0., 0., 1.]])
 
     return K
 
@@ -182,7 +196,7 @@ def calibrate(image, mode = 0, ifdraw = 1):
         K = np.array([[f, 0., pp[0]], [0., f, pp[1]], [0., 0., 1.]])
     else:
         ifweighted = False
-        K = getCameraParas(lines, clusters, mode, ifweighted)
+        K = getCameraParas(lines, clusters, pp, mode, ifweighted)
         # Its ok to replace with the new camera intrinsic parameters to estimate the camera extrinsic matrix,
         # but the difference is minor.
         detector = VPDetection(lines, [K[0, 2], K[1, 2]], K[0, 0], noiseRatio)

@@ -17,7 +17,7 @@ if __name__ == '__main__':
                         help="Give the address of geometric content of the image.")
     args = parser.parse_args()
 
-    ifsave = True
+    ifsave = False
 
     # Read the source image
     try:
@@ -26,10 +26,12 @@ if __name__ == '__main__':
         print 'Cannot open the image file, please verify the image address.'
 
     # get Camera intrinsic matrix and vanishing points.
-    # mode = 1: estimate the vanishing points (vps) and vanishing directions using the estimated K.
+    # mode = 0: estimate the vanishing points (vps) and vanishing directions using the estimated K.
     #           focal length = 1.2*max(cols,rows) of the image.
-    # mode = 2: use the LSE to re-estimate the camera parameters after the found vps.
-    # mode = 3: use the eigen value decomposition solution to re-estimate the camera parameters after the found vps.
+    # mode = 1: use the LSE to re-estimate the camera parameters after the found vps.
+    # mode = 2: use the eigen value decomposition solution to re-estimate the camera parameters after the found vps.
+    # mode = 3: when there is a matrix singularity problem, use this mode.
+
     mode = 2
     K, vps, clusters, lines = camera.calibrate(image, mode, 1)
 
