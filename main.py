@@ -84,7 +84,7 @@ if __name__ == '__main__':
     # Generate layout proposals from these line proposals.
     # A layout proposal is generated from line proposals with four different gc_labels (frontal-left wall,
     # frontal-right wall, frontal wall-ceiling and frontal wall-floor) with a vp.
-    proposals, score_list = gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_vp, vps2D,
+    proposals, score_list, label_list = gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_vp, vps2D,
                                                 gc_labels, edge_map)
 
     camera.draw_proposals(image, [proposals[i] for i in np.random.randint(0, len(proposals), 10)])
@@ -92,6 +92,11 @@ if __name__ == '__main__':
     camera.draw_proposals(image, [proposals[score_list.index(max(score_list))]])
 
     if ifsave:
-        np.save('./results/' +ntpath.basename(args.filename).split('.')[0] + '_layout.npy', proposals[score_list.index(max(score_list))])
+        np.save('./results/' + ntpath.basename(args.filename).split('.')[0] + '_layout.npy',
+                proposals[score_list.index(max(score_list))])
+        np.save('./results/' + ntpath.basename(args.filename).split('.')[0] + '_K.npy', K)
+        np.save('./results/' + ntpath.basename(args.filename).split('.')[0] + '_vps.npy', vps)
+        np.save('./results/' + ntpath.basename(args.filename).split('.')[0] + '_linelabel.npy', label_list)
+        np.save('./results/' + ntpath.basename(args.filename).split('.')[0] + '_label_vp.npy', table_gclabel_vp)
 
     print 'Debug'

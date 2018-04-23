@@ -297,24 +297,3 @@ class VPDetection:
                 clusters[bestIdx].append(i)
         return clusters
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

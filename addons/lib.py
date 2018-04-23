@@ -454,12 +454,29 @@ def gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel
     label_set1 = np.intersect1d(plabels, [gc_def['left_wallID'], gc_def['right_wallID']])
     label_set2 = np.intersect1d(plabels, [gc_def['floor_ID'], gc_def['ceiling_ID']])
 
-    proposals = []
-
-    score_list = []
-
     line_combs = np.stack(np.meshgrid(*lineIDs_gclabel), axis=len(plabels)).reshape(-1, len(plabels))
 
+    proposals = []
+    score_list = []
+    label_list = []
+
+    # Decide the gc_label for each line in layout proposals
+    for plabel1 in label_set1:
+        for plabel2 in label_set2:
+            if plabel1 < plabel2:
+                label = plabel1 * 10 + plabel2
+            else:
+                label = plabel2 * 10 + plabel1
+            label_list.append(label)
+
+    for plabel in plabels:
+        if gc_def['frontal_wallID'] < plabel:
+            label = gc_def['frontal_wallID'] * 10 + plabel
+        else:
+            label = plabel + gc_def['frontal_wallID'] * 10
+        label_list.append(label)
+
+    # begin to generate proposals
     for comb_id in xrange(len(line_combs)):
 
         new_lines = []
@@ -537,7 +554,7 @@ def gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel
         if comb_id % 1000 == 0:
             print "Current %d th step; Score: %f.\n" % (comb_id, layout_score)
 
-    return proposals, score_list
+    return proposals, score_list, label_list
 
 def gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_vp, vps2D, gc_labels, edge_map):
     # line_set: all line proposals.
@@ -572,9 +589,9 @@ def gen_layoutproposals(lines_set, line_labels_set, clusters_set, table_gclabel_
         lineIDs_gclabel.append(line_labels_set[line_labels_set[:,1] == label, 0])
 
     # generate layout proposals with lines in lineIDs_gclabel, and give their fitting score on the edge_map.
-    proposals, score_list = gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel, edge_map)
+    proposals, score_list, label_list = gen_proposals(lines_set, clusters_set, vps2D, vp2D, plabels, lineIDs_gclabel, edge_map)
 
-    return proposals, score_list
+    return proposals, score_list, label_list
 
 def processGC(gc_map):
 
