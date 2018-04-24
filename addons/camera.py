@@ -169,7 +169,7 @@ def getCameraParas(lines, clusters, pp, mode, ifweighted = False):
                     1] - vps2D[i][0] * vps2D[j][0] - vps2D[i][1] * vps2D[j][1] - pp[0] ** 2 - pp[1] ** 2
                 count += 1
 
-        focal_len = np.mean(np.sqrt([focal_len for focal_len in focal_lens if focal_len > 0]))
+        focal_len = np.min(np.sqrt([focal_len for focal_len in focal_lens if focal_len > 0]))
         K = np.array([[focal_len, 0., pp[0]], [0., focal_len, pp[1]], [0., 0., 1.]])
 
     return K
